@@ -38,7 +38,7 @@
 		"experiments": {
 			"typedRoutes": true,
 			"reactServerFunctions": true,
-			"reactServerComponents": true
+			"reactServerComponentRoutes": true
 		}
 	}
 }
