@@ -7,7 +7,7 @@ import {
 	index
 } from "drizzle-orm/pg-core"
 
-export const createTable = pgTableCreator((name) => `lingorot_${name}`)
+export const createTable = pgTableCreator((name) => `myapp_${name}`)
 
 const baseColumns = {
 	id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
