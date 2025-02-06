@@ -59,7 +59,7 @@ export default async function Index() {
 			</Text>
 			<ServerFunctionDebugger />
 			<AuthDebugger />
-			{session ? (
+			{session?.user.id ? (
 				<Text>Welcome {session.user.name}</Text>
 			) : (
 				<React.Fragment>

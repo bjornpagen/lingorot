@@ -14,3 +14,6 @@ export const authClient = createAuthClient({
 		})
 	]
 })
+
+// @ts-ignore: Nasty hack to make getCookie available in our RSC monkey patch
+globalThis.getCookie = authClient.getCookie

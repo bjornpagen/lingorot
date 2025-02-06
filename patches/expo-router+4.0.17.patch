@@ -1,0 +1,70 @@
+diff --git a/node_modules/expo-router/build/rsc/router/host.js b/node_modules/expo-router/build/rsc/router/host.js
+index 80ef726..5cb6e68 100644
+--- a/node_modules/expo-router/build/rsc/router/host.js
++++ b/node_modules/expo-router/build/rsc/router/host.js
+@@ -57,13 +57,26 @@ const NO_CACHE_HEADERS = process.env.EXPO_OS === 'web'
+         {
+             'Cache-Control': 'no-cache',
+             Pragma: 'no-cache',
+-            Expires: '0',
+-        };
++            Expires: '0'        };
+ const ACTION_HEADERS = {
+     ...NO_CACHE_HEADERS,
+     accept: RSC_CONTENT_TYPE,
+     'expo-platform': process.env.EXPO_OS,
+ };
++function getActionHeaders() {
++    if (process.env.EXPO_OS === 'web') {
++        return ACTION_HEADERS;
++    }
++    // On non-web, if getCookie is present, add its value
++    const cookie =
++        typeof globalThis.getCookie === 'function'
++            ? globalThis.getCookie()
++            : '';
++    return {
++        ...ACTION_HEADERS,
++        ...(cookie ? { Cookie: cookie } : {}),
++    };
++}
+ const checkStatus = async (responsePromise) => {
+     // TODO: Combine with metro async fetch logic.
+     const response = await responsePromise;
+@@ -134,8 +147,8 @@ const mergeElements = (a, b) => {
+ const callServerRSC = async (actionId, args, fetchCache = defaultFetchCache) => {
+     const url = getAdjustedRemoteFilePath(BASE_PATH + (0, utils_1.encodeInput)((0, utils_1.encodeActionId)(actionId)));
+     const response = args === undefined
+-        ? (0, fetch_1.fetch)(url, { headers: ACTION_HEADERS })
+-        : encodeReply(args).then((body) => (0, fetch_1.fetch)(url, { method: 'POST', body, headers: ACTION_HEADERS }));
++        ? (0, fetch_1.fetch)(url, { headers: getActionHeaders() })
++        : encodeReply(args).then((body) => (0, fetch_1.fetch)(url, { method: 'POST', body, headers: getActionHeaders() }));
+     const data = createFromFetch(checkStatus(response), {
+         callServer: (actionId, args) => (0, exports.callServerRSC)(actionId, args, fetchCache),
+     });
+@@ -149,22 +162,15 @@ const callServerRSC = async (actionId, args, fetchCache = defaultFetchCache) =>
+ exports.callServerRSC = callServerRSC;
+ const prefetchedParams = new WeakMap();
+ const fetchRSCInternal = (url, params) => params === undefined
+-    ? (0, fetch_1.fetch)(url, {
+-        // Disable caching
+-        headers: {
+-            ...NO_CACHE_HEADERS,
+-            'expo-platform': process.env.EXPO_OS,
+-        },
+-    })
++    ? (0, fetch_1.fetch)(url, { headers: getActionHeaders() })
+     : typeof params === 'string'
+         ? (0, fetch_1.fetch)(url, {
+             headers: {
+-                ...NO_CACHE_HEADERS,
+-                'expo-platform': process.env.EXPO_OS,
++                ...getActionHeaders(),
+                 'X-Expo-Params': params,
+             },
+         })
+-        : encodeReply(params).then((body) => (0, fetch_1.fetch)(url, { method: 'POST', headers: ACTION_HEADERS, body }));
++        : encodeReply(params).then((body) => (0, fetch_1.fetch)(url, { method: 'POST', headers: getActionHeaders(), body }));
+ const fetchRSC = (input, params, fetchCache = defaultFetchCache) => {
+     // TODO: strip when "is exporting".
+     if (process.env.NODE_ENV === 'development') {
