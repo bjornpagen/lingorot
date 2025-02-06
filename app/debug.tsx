@@ -1,15 +1,31 @@
 import { Text, View, Pressable } from "react-native"
-import { Link } from "expo-router"
-import React from "react"
 import { auth } from "@/lib/auth"
 import { unstable_headers as headers } from "expo-router/rsc/headers"
+import { Link } from "expo-router"
+import React from "react"
+import { AuthDebugger } from "@/components/AuthDebugger"
+import { ServerFunctionDebugger } from "@/components/ServerFunctionDebugger"
+
+function spewHeaders(headers: Headers): string {
+	const entries = Array.from(headers.entries())
+	return entries.map(([key, value]) => `${key}: ${value}`).join("\n")
+}
 
 const styles = {
 	container: {
 		flex: 1,
 		justifyContent: "center" as const,
 		alignItems: "center" as const,
-		gap: 12
+		gap: 12,
+		maxWidth: "100%" as const,
+		padding: 16
+	},
+	headerText: {
+		...(process.env.EXPO_OS === "web"
+			? { whiteSpace: "pre-wrap" as const }
+			: {}),
+		fontFamily: "monospace",
+		maxWidth: 800
 	},
 	signInButton: {
 		backgroundColor: "#007AFF",
@@ -19,12 +35,6 @@ const styles = {
 	},
 	signUpButton: {
 		backgroundColor: "#0056b3",
-		paddingVertical: 12,
-		paddingHorizontal: 24,
-		borderRadius: 8
-	},
-	debugButton: {
-		backgroundColor: "#34C759",
 		paddingVertical: 12,
 		paddingHorizontal: 24,
 		borderRadius: 8
@@ -44,10 +54,14 @@ export default async function Index() {
 
 	return (
 		<View style={styles.container}>
-			<Text>
-				{session?.user.name ? `Welcome ${session.user.name}!` : "Not signed in"}
+			<Text style={styles.headerText}>
+				Page Headers:\n{spewHeaders(reqHeaders)}
 			</Text>
-			{!session?.user.id && (
+			<ServerFunctionDebugger />
+			<AuthDebugger />
+			{session?.user.id ? (
+				<Text>Welcome {session.user.name}</Text>
+			) : (
 				<React.Fragment>
 					<Link href="/signin" asChild>
 						<Pressable style={styles.signInButton}>
@@ -61,11 +75,6 @@ export default async function Index() {
 					</Link>
 				</React.Fragment>
 			)}
-			<Link href="/debug" asChild>
-				<Pressable style={styles.debugButton}>
-					<Text style={styles.buttonText}>Debug</Text>
-				</Pressable>
-			</Link>
 		</View>
 	)
 }
