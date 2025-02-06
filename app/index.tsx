@@ -1,8 +1,7 @@
 import { Text, View, Pressable } from "react-native"
 import { Link } from "expo-router"
 import React from "react"
-import { auth } from "@/lib/auth"
-import { unstable_headers as headers } from "expo-router/rsc/headers"
+import { getSession } from "@/lib/session"
 
 const styles = {
 	container: {
@@ -37,10 +36,7 @@ const styles = {
 }
 
 export default async function Index() {
-	const reqHeaders = await headers()
-	const session = await auth.api.getSession({
-		headers: reqHeaders
-	})
+	const session = await getSession()
 
 	return (
 		<View style={styles.container}>

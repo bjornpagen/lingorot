@@ -36,6 +36,10 @@
 				"useBlockStatements": {
 					"level": "error",
 					"fix": "safe"
+				},
+				"noUnusedTemplateLiteral": {
+					"level": "error",
+					"fix": "safe"
 				}
 			},
 			"a11y": {
