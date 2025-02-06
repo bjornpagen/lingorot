@@ -3,6 +3,7 @@
 import * as React from "react"
 import { View, TextInput, Text, Pressable } from "react-native"
 import { authClient } from "@/lib/auth-client"
+import { useRouter } from "expo-router"
 
 const styles = {
 	container: {
@@ -37,13 +38,19 @@ export default function SignUpForm() {
 	const [email, setEmail] = React.useState("")
 	const [name, setName] = React.useState("")
 	const [password, setPassword] = React.useState("")
+	const router = useRouter()
 
 	const handleLogin = async () => {
-		await authClient.signUp.email({
+		const res = await authClient.signUp.email({
 			email,
 			password,
 			name
 		})
+		if (res.error) {
+			console.error(res.error)
+		} else {
+			router.replace("/")
+		}
 	}
 
 	return (
@@ -69,6 +76,9 @@ export default function SignUpForm() {
 			/>
 			<Pressable style={styles.button} onPress={handleLogin}>
 				<Text style={styles.buttonText}>Sign Up</Text>
+			</Pressable>
+			<Pressable onPress={() => router.push("/signin")}>
+				<Text>Already have an account? Sign in</Text>
 			</Pressable>
 		</View>
 	)

@@ -4,6 +4,7 @@ import { ScrollView } from "react-native"
 import ProfileHeader from "@/components/ProfileHeader"
 import ProfileStats from "@/components/ProfileStats"
 import LanguageSelector from "@/components/LanguageSelector"
+import LogoutButton from "@/components/LogoutButton"
 import type { Profile, LanguageLevel } from "@/app/profile"
 import React from "react"
 
@@ -47,7 +48,9 @@ export default function ProfileContent({
 			<ProfileHeader
 				profile={{
 					name: profile.name,
-					avatarUrl: profile.avatarUrl,
+					avatarUrl:
+						profile.avatarUrl ??
+						`https://ui-avatars.com/api/?background=random&seed=${profile.id}`,
 					bio: profile.bio,
 					stars: profile.stars,
 					currentLanguage: currentLangDetails
@@ -66,6 +69,7 @@ export default function ProfileContent({
 					minutesWatched: profile.minutesWatched
 				}}
 			/>
+			<LogoutButton />
 		</ScrollView>
 	)
 }
@@ -76,6 +80,7 @@ const styles = {
 	},
 	contentContainer: {
 		padding: 16,
-		paddingBottom: 80
+		paddingBottom: 80,
+		gap: 24
 	}
 } as const

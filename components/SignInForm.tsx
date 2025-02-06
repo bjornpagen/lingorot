@@ -70,6 +70,9 @@ export default function SignInForm() {
 			<Pressable style={styles.button} onPress={handleLogin}>
 				<Text style={styles.buttonText}>Sign In</Text>
 			</Pressable>
+			<Pressable onPress={() => router.push("/signup")}>
+				<Text>Need an account? Sign up</Text>
+			</Pressable>
 		</View>
 	)
 }
