@@ -23,9 +23,6 @@ async function getVideos(userId: string) {
 	if (!user[0]) {
 		throw new Error("User not found")
 	}
-	if (!user[0].currentLanguageId) {
-		return []
-	}
 
 	const videos = await db
 		.select({

@@ -95,10 +95,6 @@ const getInterests = async (userId: string) => {
 		)
 		.groupBy(schema.interest.id, schema.interest.name)
 
-	if (!interests) {
-		throw new Error("Interests not found")
-	}
-
 	return interests
 }
 
@@ -109,7 +105,7 @@ export type Interest = NonNullable<
 async function InterestData() {
 	const session = await getSession()
 	if (!session) {
-		throw new Error("Session not found")
+		return <Redirect href="/signin" />
 	}
 
 	const interests = await getInterests(session.user.id)

@@ -18,12 +18,8 @@ const getLeaderboard = async (userId: string) => {
 		.where(eq(schema.user.id, userId))
 		.limit(1)
 		.then((rows) => rows[0])
-
 	if (!currentUser) {
 		throw new Error("User not found")
-	}
-	if (!currentUser.currentLanguageId) {
-		return []
 	}
 
 	return db
@@ -61,14 +57,10 @@ export type LeaderboardEntry = Awaited<
 async function LeaderboardData() {
 	const session = await getSession()
 	if (!session) {
-		throw new Error("Session not found")
+		return <Redirect href="/signin" />
 	}
 
 	const entries = await getLeaderboard(session.user.id)
-	if (!entries) {
-		throw new Error("Leaderboard entries not found")
-	}
-
 	return <LeaderboardList entries={entries} />
 }
 

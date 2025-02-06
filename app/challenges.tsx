@@ -55,7 +55,7 @@ export type ChallengeEntry = Awaited<ReturnType<typeof getChallenges>>[number]
 async function ChallengeData() {
 	const session = await getSession()
 	if (!session) {
-		throw new Error("Session not found")
+		return <Redirect href="/signin" />
 	}
 
 	const challenges = await getChallenges(session.user.id)
