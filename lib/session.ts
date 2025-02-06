@@ -1,6 +1,6 @@
 import "server-only"
 
-import { auth } from "./auth"
+import { auth } from "@/lib/auth"
 import { unstable_headers as headers } from "expo-router/rsc/headers"
 
 export async function getSession() {

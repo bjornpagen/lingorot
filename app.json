@@ -1,7 +1,7 @@
 {
 	"expo": {
-		"name": "expo-rsc-tmpl",
-		"slug": "expo-rsc-tmpl",
+		"name": "lingorot",
+		"slug": "lingorot",
 		"version": "1.0.0",
 		"orientation": "portrait",
 		"icon": "./assets/images/icon.png",
@@ -33,7 +33,7 @@
 					"backgroundColor": "#ffffff"
 				}
 			],
-			"expo-secure-store"
+			"expo-video"
 		],
 		"experiments": {
 			"typedRoutes": true,

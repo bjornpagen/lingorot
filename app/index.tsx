@@ -1,67 +1,79 @@
-import { Text, View, Pressable } from "react-native"
-import { Link } from "expo-router"
-import React from "react"
+import * as React from "react"
+import { View } from "react-native"
+import VideoFeed from "@/components/VideoFeed"
+import BottomTabBar from "@/components/BottomTabBar"
 import { getSession } from "@/lib/session"
+import { db } from "@/db"
+import * as schema from "@/db/schema"
+import { eq } from "drizzle-orm"
+import PageSpinner from "@/components/PageSpinner"
+import { Redirect } from "@/components/Redirect"
+
+async function getVideos(userId: string) {
+	const userQuery = db
+		.select({
+			id: schema.user.id,
+			currentLanguageId: schema.user.currentLanguageId
+		})
+		.from(schema.user)
+		.where(eq(schema.user.id, userId))
+		.limit(1)
+
+	const user = await userQuery
+	if (!user[0]) {
+		throw new Error("User not found")
+	}
+	if (!user[0].currentLanguageId) {
+		return []
+	}
+
+	const videos = await db
+		.select({
+			id: schema.video.id,
+			title: schema.video.title,
+			description: schema.video.description,
+			url: schema.video.url,
+			thumbnail: schema.video.thumbnail
+		})
+		.from(schema.video)
+		.where(eq(schema.video.languageId, user[0].currentLanguageId))
+
+	return videos
+}
+
+export type Video = Awaited<ReturnType<typeof getVideos>>[number]
+
+async function VideoFeedData() {
+	const session = await getSession()
+	if (!session) {
+		return <Redirect href="/signin" />
+	}
+
+	const videos = await getVideos(session.user.id)
+	return <VideoFeed videos={videos} />
+}
+
+// Home page - displays the main video feed for language learning content
+export default async function HomePage() {
+	return (
+		<View style={styles.container}>
+			<View style={styles.feedContainer}>
+				<React.Suspense fallback={<PageSpinner />}>
+					{/* @ts-expect-error: experimental server component*/}
+					<VideoFeedData />
+				</React.Suspense>
+			</View>
+			<BottomTabBar />
+		</View>
+	)
+}
 
 const styles = {
 	container: {
 		flex: 1,
-		justifyContent: "center" as const,
-		alignItems: "center" as const,
-		gap: 12
+		backgroundColor: "#000"
 	},
-	signInButton: {
-		backgroundColor: "#007AFF",
-		paddingVertical: 12,
-		paddingHorizontal: 24,
-		borderRadius: 8
-	},
-	signUpButton: {
-		backgroundColor: "#0056b3",
-		paddingVertical: 12,
-		paddingHorizontal: 24,
-		borderRadius: 8
-	},
-	debugButton: {
-		backgroundColor: "#34C759",
-		paddingVertical: 12,
-		paddingHorizontal: 24,
-		borderRadius: 8
-	},
-	buttonText: {
-		color: "white",
-		fontSize: 16,
-		fontWeight: "600" as const
+	feedContainer: {
+		flex: 1
 	}
-}
-
-export default async function Index() {
-	const session = await getSession()
-
-	return (
-		<View style={styles.container}>
-			<Text>
-				{session?.user.name ? `Welcome ${session.user.name}!` : "Not signed in"}
-			</Text>
-			{!session?.user.id && (
-				<React.Fragment>
-					<Link href="/signin" asChild>
-						<Pressable style={styles.signInButton}>
-							<Text style={styles.buttonText}>Sign In</Text>
-						</Pressable>
-					</Link>
-					<Link href="/signup" asChild>
-						<Pressable style={styles.signUpButton}>
-							<Text style={styles.buttonText}>Sign Up</Text>
-						</Pressable>
-					</Link>
-				</React.Fragment>
-			)}
-			<Link href="/debug" asChild>
-				<Pressable style={styles.debugButton}>
-					<Text style={styles.buttonText}>Debug</Text>
-				</Pressable>
-			</Link>
-		</View>
-	)
-}
+} as const

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { View, TextInput, Text, Pressable } from "react-native"
 import { authClient } from "@/lib/auth-client"
+import { useRouter } from "expo-router"
 
 const styles = {
 	container: {
@@ -36,18 +37,25 @@ const styles = {
 export default function SignInForm() {
 	const [email, setEmail] = React.useState("")
 	const [password, setPassword] = React.useState("")
+	const router = useRouter()
 
 	const handleLogin = async () => {
-		await authClient.signIn.email({
+		const res = await authClient.signIn.email({
 			email,
 			password
 		})
+		if (res.error) {
+			console.error(res.error)
+		} else {
+			router.replace("/")
+		}
 	}
 
 	return (
 		<View style={styles.container}>
 			<TextInput
 				style={styles.input}
+				keyboardType="email-address"
 				placeholder="Email"
 				value={email}
 				onChangeText={setEmail}
