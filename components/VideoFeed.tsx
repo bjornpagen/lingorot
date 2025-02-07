@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { View, Text, Dimensions, FlatList } from "react-native"
+import { View, Text, Dimensions, FlatList, Image } from "react-native"
 import { useVideoPlayer, VideoView } from "expo-video"
 import { ChatButton } from "./ChatButton"
 import { ChatModal } from "./ChatModal"
@@ -30,12 +30,7 @@ const VideoCardBase = ({
 	const player = useVideoPlayer(url, (player) => {
 		player.loop = true
 		player.muted = true
-		// TODO: actually use this value in a meaningful way
-		// player.posterUrl = thumbnail
 	})
-
-	useVideoEventLogger(player, id, isActive)
-
 	React.useEffect(() => {
 		if (player) {
 			if (isActive) {
@@ -45,7 +40,7 @@ const VideoCardBase = ({
 			}
 		}
 	}, [isActive, player])
-
+	useVideoEventLogger(player, id, isActive)
 	return (
 		<React.Fragment>
 			<View style={[styles.card, { height: screenHeight }]}>
@@ -153,7 +148,26 @@ export default function VideoFeed({
 
 	const renderItem = React.useCallback(
 		({ item, index }: { item: PaginatedVideo; index: number }) => {
-			return <VideoCard {...item} isActive={index === currentVideoIndex} />
+			if (Math.abs(index - currentVideoIndex) <= 2) {
+				return <VideoCard {...item} isActive={index === currentVideoIndex} />
+			}
+			return (
+				<React.Fragment>
+					<View style={[styles.card, { height: screenHeight }]}>
+						<Image
+							source={{ uri: item.thumbnail }}
+							style={styles.video}
+							resizeMode="cover"
+						/>
+						<View style={styles.titleContainer}>
+							<View style={styles.contentBubble}>
+								<Text style={styles.title}>{item.title}</Text>
+								<Text style={styles.description}>{item.description}</Text>
+							</View>
+						</View>
+					</View>
+				</React.Fragment>
+			)
 		},
 		[currentVideoIndex]
 	)
@@ -183,11 +197,9 @@ export default function VideoFeed({
 					onEndReached={loadMoreVideos}
 					onEndReachedThreshold={0.1}
 				/>
-
 				<View style={styles.chatButtonContainer}>
 					<ChatButton onPress={() => setIsChatVisible(true)} />
 				</View>
-
 				<ChatModal
 					visible={isChatVisible}
 					onClose={() => setIsChatVisible(false)}
