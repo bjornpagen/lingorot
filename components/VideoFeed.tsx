@@ -16,13 +16,15 @@ const { width, height } = Dimensions.get("window")
 const TAB_BAR_HEIGHT = 70
 const screenHeight = height - TAB_BAR_HEIGHT
 
-const VideoCard = ({
+type VideoCardProps = PaginatedVideo & { isActive: boolean }
+
+const VideoCardBase = ({
 	title,
 	description,
 	url,
 	thumbnail,
 	isActive
-}: PaginatedVideo & { isActive: boolean }) => {
+}: VideoCardProps) => {
 	const player = useVideoPlayer(url, (player) => {
 		player.loop = true
 		player.muted = true
@@ -61,6 +63,8 @@ const VideoCard = ({
 	)
 }
 
+const VideoCard = React.memo(VideoCardBase)
+
 interface VideoFeedProps {
 	videos: PaginatedVideo[]
 	languageId: string
@@ -83,19 +87,6 @@ export default function VideoFeed({
 		[]
 	)
 
-	const onViewableItemsChanged = React.useCallback(
-		({ viewableItems }: { viewableItems: ViewToken[] }) => {
-			const newIndex = viewableItems?.[0]?.index
-			if (newIndex != null) {
-				setCurrentVideoIndex(newIndex)
-				if (newIndex > videos.length - 3 && !loadingMore && hasMore) {
-					loadMoreVideos()
-				}
-			}
-		},
-		[videos.length, loadingMore, hasMore]
-	)
-
 	const loadMoreVideos = React.useCallback(async () => {
 		if (loadingMore || !hasMore) {
 			return
@@ -111,6 +102,19 @@ export default function VideoFeed({
 		setLoadingMore(false)
 	}, [loadingMore, hasMore, page, languageId])
 
+	const onViewableItemsChanged = React.useCallback(
+		({ viewableItems }: { viewableItems: ViewToken[] }) => {
+			const newIndex = viewableItems?.[0]?.index
+			if (newIndex != null) {
+				setCurrentVideoIndex(newIndex)
+				if (newIndex > videos.length - 3 && !loadingMore && hasMore) {
+					loadMoreVideos()
+				}
+			}
+		},
+		[videos.length, loadingMore, hasMore, loadMoreVideos]
+	)
+
 	React.useEffect(() => {
 		async function preloadNextBatch() {
 			if (videos.length <= 5 && hasMore && !loadingMore) {
@@ -120,16 +124,23 @@ export default function VideoFeed({
 		preloadNextBatch()
 	}, [videos.length, hasMore, loadingMore, loadMoreVideos])
 
+	const renderItem = React.useCallback(
+		({ item, index }: { item: PaginatedVideo; index: number }) => {
+			return <VideoCard {...item} isActive={index === currentVideoIndex} />
+		},
+		[currentVideoIndex]
+	)
+
+	const keyExtractor = React.useCallback((item: PaginatedVideo) => item.id, [])
+
 	return (
 		<React.Fragment>
 			<View style={styles.container}>
 				<FlatList
 					ref={flatListRef}
 					data={videos}
-					renderItem={({ item, index }) => (
-						<VideoCard {...item} isActive={index === currentVideoIndex} />
-					)}
-					keyExtractor={(item) => item.id}
+					renderItem={renderItem}
+					keyExtractor={keyExtractor}
 					pagingEnabled
 					snapToInterval={screenHeight}
 					snapToAlignment="start"
