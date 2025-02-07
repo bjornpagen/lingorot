@@ -463,10 +463,18 @@ export const userLanguageLevelRelations = relations(
 )
 
 export const playbackEventType = pgEnum("playback_event_type", [
-	"start",
+	"playerready",
+	"viewinit",
+	"videochange",
+	"play",
+	"playing",
 	"pause",
-	"resume",
-	"end"
+	"timeupdate",
+	"seeking",
+	"seeked",
+	"ended",
+	"viewend",
+	"error"
 ])
 
 export const videoPlaybackEvent = createTable(
@@ -483,6 +491,7 @@ export const videoPlaybackEvent = createTable(
 		eventTime: timestamp("event_time", { mode: "date" })
 			.notNull()
 			.$defaultFn(() => new Date()),
+		viewerTime: timestamp("viewer_time", { mode: "date" }),
 		eventType: playbackEventType("event_type").notNull(),
 		playbackPosition: integer("playback_position").notNull(),
 		createdAt: timestamp("created_at", { mode: "date" })

@@ -465,51 +465,80 @@ async function seed() {
 	for (const chunk of chunkify(userLanguageLevelsRows)) {
 		await db.insert(schema.userLanguageLevel).values(chunk)
 	}
-	const videoPlaybackEventRows = []
+	const videoPlaybackEventRows: {
+		sessionId: string
+		videoId: string
+		userId: string
+		eventTime: Date
+		viewerTime: Date
+		eventType: (typeof schema.playbackEventType.enumValues)[number]
+		playbackPosition: number
+	}[] = []
+
 	for (const video of insertedVideos) {
 		const selectedUserIds = faker.helpers.arrayElements(userIds, 3)
 		for (const userId of selectedUserIds) {
 			const sessionId = faker.string.alphanumeric(24)
-			// Generate a start event
+			const baseTime = faker.date.recent()
+
 			videoPlaybackEventRows.push({
 				sessionId,
 				videoId: video.id,
 				userId,
-				eventTime: faker.date.recent(),
-				eventType: "start" as const,
+				eventTime: baseTime,
+				viewerTime: baseTime,
+				eventType: "playerready",
 				playbackPosition: 0
 			})
 
-			// Generate some pause/resume events
-			const pauseCount = faker.number.int({ min: 0, max: 3 })
-			for (let i = 0; i < pauseCount; i++) {
-				const position = faker.number.int({ min: 1, max: 300 })
-				videoPlaybackEventRows.push({
-					sessionId,
-					videoId: video.id,
-					userId,
-					eventTime: faker.date.recent(),
-					eventType: "pause" as const,
-					playbackPosition: position
-				})
-				videoPlaybackEventRows.push({
-					sessionId,
-					videoId: video.id,
-					userId,
-					eventTime: faker.date.recent(),
-					eventType: "resume" as const,
-					playbackPosition: position
-				})
-			}
-
-			// Generate an end event
 			videoPlaybackEventRows.push({
 				sessionId,
 				videoId: video.id,
 				userId,
-				eventTime: faker.date.recent(),
-				eventType: "end" as const,
-				playbackPosition: faker.number.int({ min: 250, max: 300 })
+				eventTime: new Date(baseTime.getTime() + 100),
+				viewerTime: new Date(baseTime.getTime() + 100),
+				eventType: "viewinit",
+				playbackPosition: 0
+			})
+
+			let currentPosition = 0
+			const eventCount = faker.number.int({ min: 5, max: 15 })
+
+			for (let i = 0; i < eventCount; i++) {
+				const timeIncrement = faker.number.int({ min: 1000, max: 5000 })
+				currentPosition += faker.number.int({ min: 1, max: 30 })
+				const currentTime = new Date(
+					baseTime.getTime() + timeIncrement * (i + 1)
+				)
+
+				const eventType = faker.helpers.arrayElement([
+					"play",
+					"playing",
+					"pause",
+					"timeupdate",
+					"seeking",
+					"seeked"
+				] as const)
+
+				videoPlaybackEventRows.push({
+					sessionId,
+					videoId: video.id,
+					userId,
+					eventTime: currentTime,
+					viewerTime: currentTime,
+					eventType,
+					playbackPosition: currentPosition
+				})
+			}
+
+			videoPlaybackEventRows.push({
+				sessionId,
+				videoId: video.id,
+				userId,
+				eventTime: new Date(baseTime.getTime() + 300000),
+				viewerTime: new Date(baseTime.getTime() + 300000),
+				eventType: "viewend",
+				playbackPosition: currentPosition
 			})
 		}
 	}
