@@ -4,6 +4,7 @@ import { asc } from "drizzle-orm"
 import { eq } from "drizzle-orm"
 import * as schema from "@/db/schema"
 import { db } from "@/db"
+import { getSession } from "@/lib/session"
 
 export type PaginatedVideo = {
 	id: string
@@ -18,6 +19,11 @@ export async function getPaginatedVideos(
 	pageSize: number,
 	languageId: string
 ): Promise<PaginatedVideo[]> {
+	const session = await getSession()
+	if (!session) {
+		throw new Error("Unauthorized")
+	}
+
 	return await db
 		.select({
 			id: schema.video.id,
