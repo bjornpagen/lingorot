@@ -11,20 +11,52 @@ import type {
 	TimeUpdateEventPayload,
 	SourceChangeEventPayload
 } from "expo-video"
-import { logVideoEvent, type VideoEvent } from "@/functions/logVideoEvent"
+import { logVideoEvents, type VideoEvent } from "@/functions/logVideoEvent"
 
 export const useVideoEventLogger = (
 	player: VideoPlayer | null,
 	videoId: string,
 	isActive: boolean
 ) => {
-	const timeUpdateThrottleRef = React.useRef<ReturnType<typeof setTimeout>>()
+	const batchQueueRef = React.useRef<Array<{ videoId: string } & VideoEvent>>(
+		[]
+	)
 
-	const captureEvent = React.useCallback(
-		async (event: VideoEvent) => {
-			try {
-				await logVideoEvent({ videoId, ...event })
-			} catch {}
+	const flushBatch = React.useCallback(() => {
+		if (batchQueueRef.current.length > 0) {
+			const eventsToFlush = batchQueueRef.current.slice()
+			batchQueueRef.current.length = 0
+			void logVideoEvents(eventsToFlush).catch(() => {})
+		}
+	}, [])
+
+	React.useEffect(() => {
+		if (!isActive) {
+			flushBatch()
+		}
+	}, [isActive, flushBatch])
+
+	React.useEffect(() => {
+		return () => {
+			flushBatch()
+		}
+	}, [flushBatch])
+
+	const addEventToBatch = React.useCallback(
+		(event: VideoEvent) => {
+			if (event.eventType === "timeUpdate") {
+				const queue = batchQueueRef.current
+				if (
+					queue.length &&
+					queue[queue.length - 1].eventType === "timeUpdate"
+				) {
+					queue[queue.length - 1] = { videoId, ...event }
+				} else {
+					queue.push({ videoId, ...event })
+				}
+			} else {
+				batchQueueRef.current.push({ videoId, ...event })
+			}
 		},
 		[videoId]
 	)
@@ -33,49 +65,38 @@ export const useVideoEventLogger = (
 		if (!player) {
 			return
 		}
-
 		const handleStatusChange = (payload: StatusChangeEventPayload) => {
-			captureEvent({ eventType: "statusChange", payload })
+			addEventToBatch({ eventType: "statusChange", payload })
 			if (payload.error) {
-				captureEvent({ eventType: "error", payload: payload.error })
+				addEventToBatch({ eventType: "error", payload: payload.error })
 			}
 		}
-
 		const handlePlayingChange = (payload: PlayingChangeEventPayload) => {
-			captureEvent({ eventType: payload.isPlaying ? "play" : "pause", payload })
+			addEventToBatch({
+				eventType: payload.isPlaying ? "play" : "pause",
+				payload
+			})
 		}
-
 		const handlePlaybackRateChange = (
 			payload: PlaybackRateChangeEventPayload
 		) => {
-			captureEvent({ eventType: "playbackRateChange", payload })
+			addEventToBatch({ eventType: "playbackRateChange", payload })
 		}
-
 		const handleVolumeChange = (payload: VolumeChangeEventPayload) => {
-			captureEvent({ eventType: "volumeChange", payload })
+			addEventToBatch({ eventType: "volumeChange", payload })
 		}
-
 		const handleMutedChange = (payload: MutedChangeEventPayload) => {
-			captureEvent({ eventType: "mutedChange", payload })
+			addEventToBatch({ eventType: "mutedChange", payload })
 		}
-
 		const handlePlayToEnd = () => {
-			captureEvent({ eventType: "ended" })
+			addEventToBatch({ eventType: "ended" })
 		}
-
 		const handleTimeUpdate = (payload: TimeUpdateEventPayload) => {
-			if (timeUpdateThrottleRef.current) {
-				clearTimeout(timeUpdateThrottleRef.current)
-			}
-			timeUpdateThrottleRef.current = setTimeout(() => {
-				captureEvent({ eventType: "timeUpdate", payload })
-			}, 1000)
+			addEventToBatch({ eventType: "timeUpdate", payload })
 		}
-
 		const handleSourceChange = (payload: SourceChangeEventPayload) => {
-			captureEvent({ eventType: "sourceChange", payload })
+			addEventToBatch({ eventType: "sourceChange", payload })
 		}
-
 		player.addListener("statusChange", handleStatusChange)
 		player.addListener("playingChange", handlePlayingChange)
 		player.addListener("playbackRateChange", handlePlaybackRateChange)
@@ -84,17 +105,12 @@ export const useVideoEventLogger = (
 		player.addListener("playToEnd", handlePlayToEnd)
 		player.addListener("timeUpdate", handleTimeUpdate)
 		player.addListener("sourceChange", handleSourceChange)
-
 		if (isActive) {
-			captureEvent({ eventType: "viewinit" })
+			addEventToBatch({ eventType: "viewinit" })
 		}
-
 		return () => {
 			if (isActive) {
-				captureEvent({ eventType: "viewend" })
-			}
-			if (timeUpdateThrottleRef.current) {
-				clearTimeout(timeUpdateThrottleRef.current)
+				addEventToBatch({ eventType: "viewend" })
 			}
 			player.removeListener("statusChange", handleStatusChange)
 			player.removeListener("playingChange", handlePlayingChange)
@@ -105,5 +121,5 @@ export const useVideoEventLogger = (
 			player.removeListener("timeUpdate", handleTimeUpdate)
 			player.removeListener("sourceChange", handleSourceChange)
 		}
-	}, [player, isActive, captureEvent])
+	}, [player, isActive, addEventToBatch])
 }
