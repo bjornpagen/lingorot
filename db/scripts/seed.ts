@@ -5,7 +5,7 @@ import * as schema from "@/db/schema"
 
 type InsertChallenge = typeof schema.challenge.$inferInsert
 
-const BATCH_SIZE = 1000
+const BATCH_SIZE = 5000
 
 function chunkify<T>(array: T[]): T[][] {
 	const chunks: T[][] = []
@@ -19,6 +19,7 @@ async function seed() {
 	console.log("Starting seed...")
 	await db.delete(schema.chatMessage)
 	await db.delete(schema.videoWord)
+	await db.delete(schema.videoPlaybackEvent)
 	await db.delete(schema.userChallengeWord)
 	await db.delete(schema.challengePeer)
 	await db.delete(schema.userChallenge)
@@ -33,7 +34,6 @@ async function seed() {
 	await db.delete(schema.account)
 	await db.delete(schema.user)
 	await db.delete(schema.language)
-	await db.delete(schema.videoPlaybackEvent)
 	const languagesData = [
 		{ code: "en", name: "English", emoji: "🇬🇧" },
 		{ code: "es", name: "Spanish", emoji: "🇪🇸" },
