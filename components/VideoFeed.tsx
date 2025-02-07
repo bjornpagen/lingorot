@@ -96,7 +96,7 @@ export default function VideoFeed({
 		[videos.length, loadingMore, hasMore]
 	)
 
-	async function loadMoreVideos() {
+	const loadMoreVideos = React.useCallback(async () => {
 		if (loadingMore || !hasMore) {
 			return
 		}
@@ -109,13 +109,16 @@ export default function VideoFeed({
 		setVideos((prev) => [...prev, ...newVideos])
 		setPage(nextPage)
 		setLoadingMore(false)
-	}
+	}, [loadingMore, hasMore, page, languageId])
 
 	React.useEffect(() => {
-		if (videos.length <= 5 && hasMore && !loadingMore) {
-			loadMoreVideos()
+		async function preloadNextBatch() {
+			if (videos.length <= 5 && hasMore && !loadingMore) {
+				await loadMoreVideos()
+			}
 		}
-	}, [videos.length, hasMore, loadingMore])
+		preloadNextBatch()
+	}, [videos.length, hasMore, loadingMore, loadMoreVideos])
 
 	return (
 		<React.Fragment>
