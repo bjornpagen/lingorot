@@ -106,18 +106,41 @@ export default function VideoFeed({
 		setLoadingMore(false)
 	}, [loadingMore, hasMore, page, languageId])
 
-	const onViewableItemsChanged = React.useCallback(
+	const videosRef = React.useRef(videos)
+	React.useEffect(() => {
+		videosRef.current = videos
+	}, [videos])
+
+	const loadingMoreRef = React.useRef(loadingMore)
+	React.useEffect(() => {
+		loadingMoreRef.current = loadingMore
+	}, [loadingMore])
+
+	const hasMoreRef = React.useRef(hasMore)
+	React.useEffect(() => {
+		hasMoreRef.current = hasMore
+	}, [hasMore])
+
+	const loadMoreVideosRef = React.useRef(loadMoreVideos)
+	React.useEffect(() => {
+		loadMoreVideosRef.current = loadMoreVideos
+	}, [loadMoreVideos])
+
+	const onViewableItemsChanged = React.useRef(
 		({ viewableItems }: { viewableItems: ViewToken[] }) => {
 			const newIndex = viewableItems?.[0]?.index
 			if (newIndex != null) {
 				setCurrentVideoIndex(newIndex)
-				if (newIndex > videos.length - 3 && !loadingMore && hasMore) {
-					loadMoreVideos()
+				if (
+					newIndex > videosRef.current.length - 3 &&
+					!loadingMoreRef.current &&
+					hasMoreRef.current
+				) {
+					loadMoreVideosRef.current()
 				}
 			}
-		},
-		[videos.length, loadingMore, hasMore, loadMoreVideos]
-	)
+		}
+	).current
 
 	React.useEffect(() => {
 		async function preloadNextBatch() {
