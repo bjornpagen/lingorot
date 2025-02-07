@@ -17,31 +17,36 @@ export default function ChallengeContent({ details }: ChallengeContentProps) {
 	return (
 		<ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 			<View style={styles.header}>
-				<Text style={styles.title}>{details.title}</Text>
-				<View style={styles.points}>
-					<Ionicons name="star" size={16} color={theme.colors.accent} />
-					<Text style={styles.pointsText}>{details.points}</Text>
+				<View style={styles.headerMain}>
+					<Text style={styles.title}>{details.title}</Text>
+					<View style={styles.points}>
+						<Ionicons name="star" size={16} color={theme.colors.accent} />
+						<Text style={styles.pointsText}>{details.points}</Text>
+					</View>
+				</View>
+				<View style={styles.infoRow}>
+					<Ionicons
+						name={
+							details.expiryType === "date" ? "time-outline" : "people-outline"
+						}
+						size={18}
+						color={theme.colors.text.secondary}
+					/>
+					<Text style={styles.expiryText}>{expiryText}</Text>
 				</View>
 			</View>
 
 			<Text style={styles.description}>{details.description}</Text>
-			<View style={styles.expiryContainer}>
-				<Ionicons
-					name={
-						details.expiryType === "date" ? "time-outline" : "people-outline"
-					}
-					size={18}
-					color={theme.colors.text.secondary}
-				/>
-				<Text style={styles.expiryText}>{expiryText}</Text>
-			</View>
 
 			<View>
-				<Text style={styles.sectionTitle}>Words Learned</Text>
+				<Text style={styles.sectionTitle}>
+					Words Learned ({details.wordsLearned.length}/{details.progress.total})
+				</Text>
 				<View style={styles.wordsContainer}>
 					{details.wordsLearned.length === 0 ? (
 						<Text style={styles.emptyText}>
-							No words learned yet. Watch videos to discover new words!
+							Learn {details.progress.total} new words by watching videos to
+							complete this challenge!
 						</Text>
 					) : (
 						details.wordsLearned.map((word) => (
@@ -91,7 +96,10 @@ export default function ChallengeContent({ details }: ChallengeContentProps) {
 									/>
 								</View>
 							)}
-							<Image source={{ uri: peer.avatarUrl }} style={styles.avatar} />
+							<Image
+								source={{ uri: peer.avatarUrl ?? undefined }}
+								style={styles.avatar}
+							/>
 						</View>
 						<View style={styles.details}>
 							<View style={styles.nameRow}>
@@ -123,10 +131,13 @@ const styles = {
 		padding: theme.spacing.md
 	},
 	header: {
+		gap: theme.spacing.sm,
+		marginBottom: theme.spacing.md
+	},
+	headerMain: {
 		flexDirection: "row",
 		justifyContent: "space-between",
-		alignItems: "center",
-		marginBottom: theme.spacing.md
+		alignItems: "center"
 	},
 	title: {
 		fontSize: 24,
@@ -259,15 +270,16 @@ const styles = {
 	expiryContainer: {
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: theme.colors.surface,
-		padding: theme.spacing.md,
-		borderRadius: theme.borderRadius.sm,
 		marginBottom: theme.spacing.lg
+	},
+	infoRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: theme.spacing.xs
 	},
 	expiryText: {
 		fontSize: 14,
-		color: theme.colors.text.secondary,
-		marginLeft: theme.spacing.sm
+		color: theme.colors.text.secondary
 	},
 	nameRow: {
 		flexDirection: "row",
