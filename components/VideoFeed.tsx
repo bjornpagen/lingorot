@@ -82,12 +82,18 @@ export default function VideoFeed({
 		() => ({ viewAreaCoveragePercentThreshold: 25 }),
 		[]
 	)
+
 	const onViewableItemsChanged = React.useCallback(
 		({ viewableItems }: { viewableItems: ViewToken[] }) => {
 			const newIndex = viewableItems?.[0]?.index
-			newIndex != null && setCurrentVideoIndex(newIndex)
+			if (newIndex != null) {
+				setCurrentVideoIndex(newIndex)
+				if (newIndex > videos.length - 3 && !loadingMore && hasMore) {
+					loadMoreVideos()
+				}
+			}
 		},
-		[]
+		[videos.length, loadingMore, hasMore]
 	)
 
 	async function loadMoreVideos() {
@@ -104,6 +110,12 @@ export default function VideoFeed({
 		setPage(nextPage)
 		setLoadingMore(false)
 	}
+
+	React.useEffect(() => {
+		if (videos.length <= 5 && hasMore && !loadingMore) {
+			loadMoreVideos()
+		}
+	}, [videos.length, hasMore, loadingMore])
 
 	return (
 		<React.Fragment>
