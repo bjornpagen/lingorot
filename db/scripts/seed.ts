@@ -6,6 +6,8 @@ import * as schema from "@/db/schema"
 type InsertChallenge = typeof schema.challenge.$inferInsert
 
 const BATCH_SIZE = 5000
+const MUX_ASSET_ID = "lLLzoMYxXku1lvXSFKPu01G7fdOrugluHO16MzI35Cn00"
+const MUX_PLAYBACK_ID = "lNF9zfcunqkk029LtRezZEch7AIH933SH02Qf9tngf01D4"
 
 function chunkify<T>(array: T[]): T[][] {
 	const chunks: T[][] = []
@@ -388,8 +390,8 @@ async function seed() {
 		return Array.from({ length: 10 }, () => ({
 			title: faker.lorem.sentence(),
 			description: faker.lorem.paragraph(),
-			muxAssetId: faker.string.uuid(),
-			muxPlaybackId: faker.string.uuid(),
+			muxAssetId: MUX_ASSET_ID,
+			muxPlaybackId: MUX_PLAYBACK_ID,
 			muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
 				probability: 0.5
 			}),

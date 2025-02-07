@@ -1,19 +1,13 @@
 "use client"
 
 import * as React from "react"
-import {
-	View,
-	Text,
-	Dimensions,
-	FlatList,
-	type NativeSyntheticEvent,
-	type NativeScrollEvent
-} from "react-native"
+import { View, Text, Dimensions, FlatList } from "react-native"
 import { useVideoPlayer, VideoView } from "expo-video"
 import { ChatButton } from "./ChatButton"
 import { ChatModal } from "./ChatModal"
 import { theme } from "@/lib/theme"
 import type { Video } from "@/app/index"
+import type { ViewToken } from "react-native"
 
 const { width, height } = Dimensions.get("window")
 const TAB_BAR_HEIGHT = 70
@@ -74,11 +68,17 @@ export default function VideoFeed({ videos: initialVideos }: VideoFeedProps) {
 	const [isChatVisible, setIsChatVisible] = React.useState(false)
 	const [currentVideoIndex, setCurrentVideoIndex] = React.useState(0)
 
-	const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-		const offsetY = event.nativeEvent.contentOffset.y
-		const index = Math.floor(offsetY / screenHeight)
-		setCurrentVideoIndex(index)
-	}
+	const viewabilityConfig = React.useMemo(
+		() => ({ viewAreaCoveragePercentThreshold: 25 }),
+		[]
+	)
+	const onViewableItemsChanged = React.useCallback(
+		({ viewableItems }: { viewableItems: ViewToken[] }) => {
+			const newIndex = viewableItems?.[0]?.index
+			newIndex != null && setCurrentVideoIndex(newIndex)
+		},
+		[]
+	)
 
 	return (
 		<React.Fragment>
@@ -99,8 +99,9 @@ export default function VideoFeed({ videos: initialVideos }: VideoFeedProps) {
 					removeClippedSubviews
 					maxToRenderPerBatch={3}
 					windowSize={5}
-					onScroll={handleScroll}
 					bounces={false}
+					onViewableItemsChanged={onViewableItemsChanged}
+					viewabilityConfig={viewabilityConfig}
 				/>
 
 				<View style={styles.chatButtonContainer}>
