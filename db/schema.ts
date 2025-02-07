@@ -5,6 +5,7 @@ import {
 	timestamp,
 	text,
 	integer,
+	real,
 	boolean,
 	index,
 	pgEnum,
@@ -463,18 +464,18 @@ export const userLanguageLevelRelations = relations(
 )
 
 export const playbackEventType = pgEnum("playback_event_type", [
-	"playerready",
 	"viewinit",
-	"videochange",
-	"play",
-	"playing",
-	"pause",
-	"timeupdate",
-	"seeking",
-	"seeked",
-	"ended",
 	"viewend",
-	"error"
+	"statusChange",
+	"error",
+	"play",
+	"pause",
+	"playbackRateChange",
+	"volumeChange",
+	"mutedChange",
+	"ended",
+	"timeUpdate",
+	"sourceChange"
 ])
 
 export const videoPlaybackEvent = createTable(
@@ -493,14 +494,128 @@ export const videoPlaybackEvent = createTable(
 			.$defaultFn(() => new Date()),
 		viewerTime: timestamp("viewer_time", { mode: "date" }),
 		eventType: playbackEventType("event_type").notNull(),
-		playbackPosition: integer("playback_position").notNull(),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
-			.$defaultFn(() => new Date())
+			.$defaultFn(() => new Date()),
+		playbackPosition: real("playback_position"),
+		bufferedPosition: real("buffered_position"),
+		currentLiveTimestamp: real("current_live_timestamp"),
+		currentOffsetFromLive: real("current_offset_from_live"),
+		status: text("status"),
+		oldStatus: text("old_status"),
+		error: text("error"),
+		playbackRate: real("playback_rate"),
+		oldPlaybackRate: real("old_playback_rate"),
+		volume: real("volume"),
+		oldVolume: real("old_volume"),
+		muted: boolean("muted"),
+		oldMuted: boolean("old_muted"),
+		source: text("source"),
+		oldSource: text("old_source")
 	},
 	(table) => [
 		primaryKey({ columns: [table.id, table.eventTime] }),
 		index("video_playback_event_user_id_idx").on(table.userId),
-		index("video_playback_event_video_id_idx").on(table.videoId)
+		index("video_playback_event_video_id_idx").on(table.videoId),
+		check(
+			"chk_playback_position",
+			sql`(
+				(event_type = 'timeUpdate' AND playback_position IS NOT NULL)
+				OR (event_type <> 'timeUpdate' AND playback_position IS NULL)
+			)`
+		),
+		check(
+			"chk_buffered_position",
+			sql`(
+				(event_type = 'timeUpdate' AND buffered_position IS NOT NULL)
+				OR (event_type <> 'timeUpdate' AND buffered_position IS NULL)
+			)`
+		),
+		check(
+			"chk_current_live_timestamp",
+			sql`(
+				event_type = 'timeUpdate' OR current_live_timestamp IS NULL
+			)`
+		),
+		check(
+			"chk_current_offset_from_live",
+			sql`(
+				event_type = 'timeUpdate' OR current_offset_from_live IS NULL
+			)`
+		),
+		check(
+			"chk_status",
+			sql`(
+				(event_type = 'statusChange' AND status IS NOT NULL)
+				OR (event_type <> 'statusChange' AND status IS NULL)
+			)`
+		),
+		check(
+			"chk_old_status",
+			sql`(
+				event_type = 'statusChange' OR old_status IS NULL
+			)`
+		),
+		check(
+			"chk_error",
+			sql`(
+				(event_type = 'error' AND error IS NOT NULL)
+				OR (event_type <> 'error' AND error IS NULL)
+			)`
+		),
+		check(
+			"chk_playback_rate",
+			sql`(
+				(event_type = 'playbackRateChange' AND playback_rate IS NOT NULL)
+				OR (event_type <> 'playbackRateChange' AND playback_rate IS NULL)
+			)`
+		),
+		check(
+			"chk_old_playback_rate",
+			sql`(
+				(event_type = 'playbackRateChange' AND old_playback_rate IS NOT NULL)
+				OR (event_type <> 'playbackRateChange' AND old_playback_rate IS NULL)
+			)`
+		),
+		check(
+			"chk_volume",
+			sql`(
+				(event_type = 'volumeChange' AND volume IS NOT NULL)
+				OR (event_type <> 'volumeChange' AND volume IS NULL)
+			)`
+		),
+		check(
+			"chk_old_volume",
+			sql`(
+				(event_type = 'volumeChange' AND old_volume IS NOT NULL)
+				OR (event_type <> 'volumeChange' AND old_volume IS NULL)
+			)`
+		),
+		check(
+			"chk_muted",
+			sql`(
+				(event_type = 'mutedChange' AND muted IS NOT NULL)
+				OR (event_type <> 'mutedChange' AND muted IS NULL)
+			)`
+		),
+		check(
+			"chk_old_muted",
+			sql`(
+				event_type = 'mutedChange' OR old_muted IS NULL
+			)`
+		),
+		check(
+			"chk_source",
+			sql`(
+				(event_type = 'sourceChange' AND source IS NOT NULL)
+				OR (event_type <> 'sourceChange' AND source IS NULL)
+			)`
+		),
+		check(
+			"chk_old_source",
+			sql`(
+				event_type = 'sourceChange' OR old_source IS NULL
+			)`
+		)
 	]
 )

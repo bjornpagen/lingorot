@@ -11,6 +11,7 @@ import {
 	type PaginatedVideo
 } from "@/functions/videoPreloader"
 import type { ViewToken } from "react-native"
+import { useVideoEventLogger } from "@/hooks/useVideoEventLogger"
 
 const { width, height } = Dimensions.get("window")
 const TAB_BAR_HEIGHT = 70
@@ -23,6 +24,7 @@ const VideoCardBase = ({
 	description,
 	url,
 	thumbnail,
+	id,
 	isActive
 }: VideoCardProps) => {
 	const player = useVideoPlayer(url, (player) => {
@@ -31,6 +33,8 @@ const VideoCardBase = ({
 		// TODO: actually use this value in a meaningful way
 		// player.posterUrl = thumbnail
 	})
+
+	useVideoEventLogger(player, id, isActive)
 
 	React.useEffect(() => {
 		if (player) {

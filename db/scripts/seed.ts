@@ -4,6 +4,7 @@ import { db } from "@/db"
 import * as schema from "@/db/schema"
 
 type InsertChallenge = typeof schema.challenge.$inferInsert
+type InsertVideoPlaybackEvent = typeof schema.videoPlaybackEvent.$inferInsert
 
 const BATCH_SIZE = 5000
 const MUX_ASSET_ID = "lLLzoMYxXku1lvXSFKPu01G7fdOrugluHO16MzI35Cn00"
@@ -467,15 +468,7 @@ async function seed() {
 	for (const chunk of chunkify(userLanguageLevelsRows)) {
 		await db.insert(schema.userLanguageLevel).values(chunk)
 	}
-	const videoPlaybackEventRows: {
-		sessionId: string
-		videoId: string
-		userId: string
-		eventTime: Date
-		viewerTime: Date
-		eventType: (typeof schema.playbackEventType.enumValues)[number]
-		playbackPosition: number
-	}[] = []
+	const videoPlaybackEventRows = []
 
 	for (const video of insertedVideos) {
 		const selectedUserIds = faker.helpers.arrayElements(userIds, 3)
@@ -489,18 +482,8 @@ async function seed() {
 				userId,
 				eventTime: baseTime,
 				viewerTime: baseTime,
-				eventType: "playerready",
-				playbackPosition: 0
-			})
-
-			videoPlaybackEventRows.push({
-				sessionId,
-				videoId: video.id,
-				userId,
-				eventTime: new Date(baseTime.getTime() + 100),
-				viewerTime: new Date(baseTime.getTime() + 100),
-				eventType: "viewinit",
-				playbackPosition: 0
+				eventType:
+					"viewinit" as (typeof schema.playbackEventType.enumValues)[number]
 			})
 
 			let currentPosition = 0
@@ -514,23 +497,68 @@ async function seed() {
 				)
 
 				const eventType = faker.helpers.arrayElement([
+					"statusChange",
 					"play",
-					"playing",
 					"pause",
-					"timeupdate",
-					"seeking",
-					"seeked"
-				] as const)
+					"timeUpdate",
+					"playbackRateChange",
+					"volumeChange",
+					"mutedChange"
+				] as const) as (typeof schema.playbackEventType.enumValues)[number]
 
-				videoPlaybackEventRows.push({
+				const event: InsertVideoPlaybackEvent = {
 					sessionId,
 					videoId: video.id,
 					userId,
 					eventTime: currentTime,
 					viewerTime: currentTime,
-					eventType,
-					playbackPosition: currentPosition
-				})
+					eventType
+				}
+
+				switch (eventType) {
+					case "timeUpdate":
+						event.playbackPosition = currentPosition
+						event.bufferedPosition = currentPosition + 30
+						event.currentLiveTimestamp = Date.now()
+						event.currentOffsetFromLive = 0
+						break
+					case "statusChange":
+						event.status = faker.helpers.arrayElement([
+							"playing",
+							"paused",
+							"buffering"
+						])
+						event.oldStatus = faker.helpers.arrayElement([
+							"playing",
+							"paused",
+							"buffering"
+						])
+						break
+					case "playbackRateChange":
+						event.playbackRate = faker.helpers.arrayElement([
+							0.5, 1.0, 1.5, 2.0
+						])
+						event.oldPlaybackRate = faker.helpers.arrayElement([
+							0.5, 1.0, 1.5, 2.0
+						])
+						break
+					case "volumeChange":
+						event.volume = faker.number.float({
+							min: 0,
+							max: 1
+						})
+						event.oldVolume = faker.number.float({
+							min: 0,
+							max: 1
+						})
+						break
+					case "mutedChange":
+						event.muted = faker.datatype.boolean()
+						event.oldMuted = !event.muted
+						break
+				}
+
+				videoPlaybackEventRows.push(event)
 			}
 
 			videoPlaybackEventRows.push({
@@ -539,8 +567,8 @@ async function seed() {
 				userId,
 				eventTime: new Date(baseTime.getTime() + 300000),
 				viewerTime: new Date(baseTime.getTime() + 300000),
-				eventType: "viewend",
-				playbackPosition: currentPosition
+				eventType:
+					"viewend" as (typeof schema.playbackEventType.enumValues)[number]
 			})
 		}
 	}
