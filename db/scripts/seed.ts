@@ -2,6 +2,7 @@ import "dotenv/config"
 import { faker } from "@faker-js/faker"
 import { db } from "@/db"
 import * as schema from "@/db/schema"
+import { getTableName, sql } from "drizzle-orm"
 
 type InsertChallenge = typeof schema.challenge.$inferInsert
 type InsertVideoPlaybackEvent = typeof schema.videoPlaybackEvent.$inferInsert
@@ -576,6 +577,14 @@ async function seed() {
 	for (const chunk of chunkify(videoPlaybackEventRows)) {
 		await db.insert(schema.videoPlaybackEvent).values(chunk)
 	}
+
+	const table = getTableName(schema.videoPlaybackEvent)
+	const column = schema.videoPlaybackEvent.eventTime.name
+	console.log(table, column)
+	await db.execute(
+		sql`SELECT create_hypertable(${table}, ${column}, create_default_indexes => true, if_not_exists => true, migrate_data => true)`
+	)
+
 	console.log("Seed completed!")
 }
 
