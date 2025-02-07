@@ -389,7 +389,7 @@ async function seed() {
 		await db.insert(schema.challengePeer).values(chunk)
 	}
 	const videoRows = Array.from(languageCodes).flatMap((languageId) => {
-		return Array.from({ length: 10 }, () => ({
+		return Array.from({ length: 100 }, () => ({
 			title: faker.lorem.sentence(),
 			description: faker.lorem.paragraph(),
 			muxAssetId: MUX_ASSET_ID,
