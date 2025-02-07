@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
 	Modal,
 	View,
@@ -8,10 +8,10 @@ import {
 	TextInput,
 	TouchableOpacity,
 	KeyboardAvoidingView,
-	Platform,
 	ScrollView
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import React from "react"
 
 interface Message {
 	id: string
@@ -35,8 +35,7 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 		}
 	])
 
-	// Update initial message when video title changes
-	useEffect(() => {
+	React.useEffect(() => {
 		setMessages([
 			{
 				id: "1",
@@ -51,7 +50,6 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 			return
 		}
 
-		// Add user message
 		const userMessage: Message = {
 			id: Date.now().toString(),
 			text: message,
@@ -61,8 +59,6 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 		setMessages((prev) => [...prev, userMessage])
 		setMessage("")
 
-		// TODO: Integrate with AI service to get response
-		// For now, just add a mock response
 		setTimeout(() => {
 			const aiMessage: Message = {
 				id: (Date.now() + 1).toString(),
@@ -81,6 +77,7 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 			onRequestClose={onClose}
 		>
 			<View style={styles.modalContainer}>
+				<View style={styles.safeAreaTop} />
 				<View style={styles.modalContent}>
 					<View style={styles.header}>
 						<Text style={styles.title}>Practice Time! 🌟</Text>
@@ -104,7 +101,7 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 					</ScrollView>
 
 					<KeyboardAvoidingView
-						behavior={Platform.OS === "ios" ? "padding" : "height"}
+						behavior={process.env.EXPO_OS === "ios" ? "padding" : "height"}
 						style={styles.inputContainer}
 					>
 						<TextInput
@@ -112,12 +109,15 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 							value={message}
 							onChangeText={setMessage}
 							placeholder="Type your message..."
-							multiline
+							onSubmitEditing={handleSend}
+							returnKeyType="send"
+							blurOnSubmit={false}
 						/>
 						<TouchableOpacity onPress={handleSend} style={styles.sendButton}>
 							<Ionicons name="send" size={24} color="white" />
 						</TouchableOpacity>
 					</KeyboardAvoidingView>
+					<View style={styles.safeAreaBottom} />
 				</View>
 			</View>
 		</Modal>
@@ -129,10 +129,15 @@ const styles = {
 		flex: 1,
 		backgroundColor: "rgba(0, 0, 0, 0.5)"
 	},
+	safeAreaTop: {
+		paddingTop: 47
+	},
+	safeAreaBottom: {
+		paddingBottom: 34
+	},
 	modalContent: {
 		flex: 1,
-		backgroundColor: "#FFF9F9", // Softer background
-		marginTop: 60,
+		backgroundColor: "#FFF9F9",
 		borderTopLeftRadius: 30,
 		borderTopRightRadius: 30,
 		shadowColor: "#000",
