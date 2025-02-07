@@ -12,7 +12,7 @@ import { Redirect } from "@/components/Redirect"
 const getLeaderboard = async (userId: string) => {
 	const currentUser = await db
 		.select({
-			currentLanguageId: schema.user.currentLanguageId
+			currentLanguageCode: schema.user.currentLanguageId
 		})
 		.from(schema.user)
 		.where(eq(schema.user.id, userId))
@@ -40,12 +40,12 @@ const getLeaderboard = async (userId: string) => {
 			schema.userLanguageLevel,
 			and(
 				eq(schema.user.id, schema.userLanguageLevel.userId),
-				eq(schema.userLanguageLevel.languageId, currentUser.currentLanguageId)
+				eq(schema.userLanguageLevel.languageId, currentUser.currentLanguageCode)
 			)
 		)
 		.innerJoin(
 			schema.language,
-			eq(schema.userLanguageLevel.languageId, schema.language.id)
+			eq(schema.userLanguageLevel.languageId, schema.language.code)
 		)
 		.orderBy(desc(schema.userLanguageLevel.stars))
 }

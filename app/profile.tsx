@@ -31,28 +31,17 @@ async function updateUserLanguage(code: string) {
 		throw new Error("Session not found")
 	}
 
-	const language = await db
-		.select({ id: schema.language.id })
-		.from(schema.language)
-		.where(eq(schema.language.code, code))
-		.limit(1)
-		.then((rows) => rows[0])
-
-	if (!language) {
-		throw new Error("Language not found")
-	}
-
 	await db.transaction(async (tx) => {
 		await tx
 			.update(schema.user)
-			.set({ currentLanguageId: language.id })
+			.set({ currentLanguageId: code })
 			.where(eq(schema.user.id, session.user.id))
 
 		await tx
 			.insert(schema.userLanguageLevel)
 			.values({
 				userId: session.user.id,
-				languageId: language.id,
+				languageId: code,
 				stars: 0
 			})
 			.onConflictDoNothing()
@@ -74,15 +63,18 @@ const getProfile = async (userId: string) => {
 			stars: sql<number>`COALESCE(sum(${schema.userLanguageLevel.stars}), 0)`
 		})
 		.from(schema.user)
-		.where(eq(schema.user.id, userId))
 		.innerJoin(
 			schema.language,
-			eq(schema.user.currentLanguageId, schema.language.id)
+			eq(schema.user.currentLanguageId, schema.language.code)
 		)
-		.innerJoin(
+		.leftJoin(
 			schema.userLanguageLevel,
-			eq(schema.user.id, schema.userLanguageLevel.userId)
+			and(
+				eq(schema.user.id, schema.userLanguageLevel.userId),
+				eq(schema.userLanguageLevel.languageId, schema.language.code)
+			)
 		)
+		.where(eq(schema.user.id, userId))
 		.groupBy(
 			schema.user.id,
 			schema.user.name,
@@ -112,10 +104,10 @@ const getLanguageLevels = async (userId: string) => {
 			emoji: schema.language.emoji
 		})
 		.from(schema.language)
-		.innerJoin(
+		.leftJoin(
 			schema.userLanguageLevel,
 			and(
-				eq(schema.userLanguageLevel.languageId, schema.language.id),
+				eq(schema.userLanguageLevel.languageId, schema.language.code),
 				eq(schema.userLanguageLevel.userId, userId)
 			)
 		)

@@ -35,9 +35,10 @@ export const user = createTable("user", {
 	wordsLearned: integer("words_learned").notNull().default(0),
 	minutesWatched: integer("minutes_watched").notNull().default(0),
 	daysStreak: integer("days_streak").notNull().default(0),
-	currentLanguageId: char("current_language_id", { length: 24 }).references(
-		() => language.id
-	)
+	currentLanguageId: char("current_language_id", { length: 2 })
+		.references(() => language.code)
+		.notNull()
+		.default("en")
 })
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -127,11 +128,10 @@ export const expiryType = pgEnum("expiry_type", ["claims", "date"])
 export const language = createTable(
 	"language",
 	{
-		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		code: char("code", { length: 2 }).primaryKey().notNull(),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
 			.$default(() => new Date()),
-		code: text("code").notNull().unique(),
 		name: text("name").notNull(),
 		emoji: text("emoji").notNull()
 	},
@@ -266,9 +266,9 @@ export const video = createTable(
 		muxAssetId: text("mux_asset_id").notNull(),
 		muxPlaybackId: text("mux_playback_id").notNull(),
 		muxTranscript: text("mux_transcript"),
-		languageId: char("language_id", { length: 24 })
+		languageId: char("language_id", { length: 2 })
 			.notNull()
-			.references(() => language.id),
+			.references(() => language.code),
 		thumbnail: text("thumbnail")
 			.notNull()
 			.generatedAlwaysAs(
@@ -314,9 +314,9 @@ export const userLanguageLevel = createTable(
 		userId: char("user_id", { length: 24 })
 			.notNull()
 			.references(() => user.id),
-		languageId: char("language_id", { length: 24 })
+		languageId: char("language_id", { length: 2 })
 			.notNull()
-			.references(() => language.id),
+			.references(() => language.code),
 		stars: integer("stars").notNull().default(0),
 		level: integer("level")
 			.notNull()
@@ -392,7 +392,7 @@ export const usersRelations = relations(user, ({ many, one }) => ({
 	userChallenges: many(userChallenge),
 	currentLanguage: one(language, {
 		fields: [user.currentLanguageId],
-		references: [language.id]
+		references: [language.code]
 	}),
 	interests: many(userInterest)
 }))
@@ -430,7 +430,7 @@ export const userChallengeWordsRelations = relations(
 export const videosRelations = relations(video, ({ one }) => ({
 	language: one(language, {
 		fields: [video.languageId],
-		references: [language.id]
+		references: [language.code]
 	})
 }))
 
@@ -453,7 +453,7 @@ export const userLanguageLevelRelations = relations(
 	({ one }) => ({
 		language: one(language, {
 			fields: [userLanguageLevel.languageId],
-			references: [language.id]
+			references: [language.code]
 		}),
 		user: one(user, {
 			fields: [userLanguageLevel.userId],

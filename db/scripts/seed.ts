@@ -44,11 +44,9 @@ async function seed() {
 	const languageResults = await db
 		.insert(schema.language)
 		.values(languagesData)
-		.returning({ id: schema.language.id, code: schema.language.code })
-	const languageMap = new Map<string, string>()
-	for (const lang of languageResults) {
-		languageMap.set(lang.code, lang.id)
-	}
+		.returning({ code: schema.language.code })
+
+	const languageCodes = languageResults.map((l) => l.code)
 	const interestsData = [
 		{
 			name: "Entertainment",
@@ -254,8 +252,7 @@ async function seed() {
 	}
 	const userCount = 20
 	const userRows = Array.from({ length: userCount }, () => {
-		const languageIds = Array.from(languageMap.values())
-		const currentLanguageId = faker.helpers.arrayElement(languageIds)
+		const currentLanguageId = faker.helpers.arrayElement(languageCodes)
 		return {
 			name: faker.person.fullName(),
 			email: faker.internet.email(),
@@ -386,20 +383,18 @@ async function seed() {
 	for (const chunk of chunkify(challengePeersRows)) {
 		await db.insert(schema.challengePeer).values(chunk)
 	}
-	const videoRows = Array.from(languageMap.entries()).flatMap(
-		([, languageId]) => {
-			return Array.from({ length: 10 }, () => ({
-				title: faker.lorem.sentence(),
-				description: faker.lorem.paragraph(),
-				muxAssetId: faker.string.uuid(),
-				muxPlaybackId: faker.string.uuid(),
-				muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
-					probability: 0.5
-				}),
-				languageId
-			}))
-		}
-	)
+	const videoRows = Array.from(languageCodes).flatMap((languageId) => {
+		return Array.from({ length: 10 }, () => ({
+			title: faker.lorem.sentence(),
+			description: faker.lorem.paragraph(),
+			muxAssetId: faker.string.uuid(),
+			muxPlaybackId: faker.string.uuid(),
+			muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
+				probability: 0.5
+			}),
+			languageId
+		}))
+	})
 	const insertedVideos = await db
 		.insert(schema.video)
 		.values(videoRows)
@@ -452,9 +447,7 @@ async function seed() {
 
 		if (faker.datatype.boolean()) {
 			const randomLanguageId = faker.helpers.arrayElement(
-				Array.from(languageMap.values()).filter(
-					(id) => id !== currentLanguageId
-				)
+				languageCodes.filter((id) => id !== currentLanguageId)
 			)
 			const randomKey = `${userId}-${randomLanguageId}`
 			if (!seenCombinations.has(randomKey)) {

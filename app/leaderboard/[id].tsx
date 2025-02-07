@@ -50,7 +50,7 @@ const getLeaderboardEntry = async (userId: string, id: string) => {
 		)
 		.innerJoin(
 			schema.language,
-			eq(schema.userLanguageLevel.languageId, schema.language.id)
+			eq(schema.userLanguageLevel.languageId, schema.language.code)
 		)
 		.where(eq(schema.user.id, id))
 		.limit(1)

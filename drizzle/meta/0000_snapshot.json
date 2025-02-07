@@ -1,5 +1,5 @@
 {
-  "id": "b657e2da-2f8d-47f7-9fcd-498bbe962f68",
+  "id": "cde08260-17b3-408a-91f2-76febc862dcb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -427,21 +427,15 @@
       "name": "lingorot_language",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "char(24)",
+        "code": {
+          "name": "code",
+          "type": "char(2)",
           "primaryKey": true,
           "notNull": true
         },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "code": {
-          "name": "code",
-          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -477,15 +471,7 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "lingorot_language_code_unique": {
-          "name": "lingorot_language_code_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "code"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -723,22 +709,23 @@
         },
         "current_language_id": {
           "name": "current_language_id",
-          "type": "char(24)",
+          "type": "char(2)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'en'"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "lingorot_user_current_language_id_lingorot_language_id_fk": {
-          "name": "lingorot_user_current_language_id_lingorot_language_id_fk",
+        "lingorot_user_current_language_id_lingorot_language_code_fk": {
+          "name": "lingorot_user_current_language_id_lingorot_language_code_fk",
           "tableFrom": "lingorot_user",
           "tableTo": "lingorot_language",
           "columnsFrom": [
             "current_language_id"
           ],
           "columnsTo": [
-            "id"
+            "code"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1037,7 +1024,7 @@
         },
         "language_id": {
           "name": "language_id",
-          "type": "char(24)",
+          "type": "char(2)",
           "primaryKey": false,
           "notNull": true
         },
@@ -1090,15 +1077,15 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "lingorot_user_language_level_language_id_lingorot_language_id_fk": {
-          "name": "lingorot_user_language_level_language_id_lingorot_language_id_fk",
+        "lingorot_user_language_level_language_id_lingorot_language_code_fk": {
+          "name": "lingorot_user_language_level_language_id_lingorot_language_code_fk",
           "tableFrom": "lingorot_user_language_level",
           "tableTo": "lingorot_language",
           "columnsFrom": [
             "language_id"
           ],
           "columnsTo": [
-            "id"
+            "code"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1216,7 +1203,7 @@
         },
         "language_id": {
           "name": "language_id",
-          "type": "char(24)",
+          "type": "char(2)",
           "primaryKey": false,
           "notNull": true
         },
@@ -1274,15 +1261,15 @@
         }
       },
       "foreignKeys": {
-        "lingorot_video_language_id_lingorot_language_id_fk": {
-          "name": "lingorot_video_language_id_lingorot_language_id_fk",
+        "lingorot_video_language_id_lingorot_language_code_fk": {
+          "name": "lingorot_video_language_id_lingorot_language_code_fk",
           "tableFrom": "lingorot_video",
           "tableTo": "lingorot_language",
           "columnsFrom": [
             "language_id"
           ],
           "columnsTo": [
-            "id"
+            "code"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
