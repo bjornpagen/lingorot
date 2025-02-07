@@ -461,3 +461,36 @@ export const userLanguageLevelRelations = relations(
 		})
 	})
 )
+
+export const playbackEventType = pgEnum("playback_event_type", [
+	"start",
+	"pause",
+	"resume",
+	"end"
+])
+
+export const videoPlaybackEvent = createTable(
+	"video_playback_event",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		sessionId: char("session_id", { length: 24 }).notNull(),
+		videoId: char("video_id", { length: 24 })
+			.notNull()
+			.references(() => video.id),
+		userId: char("user_id", { length: 24 })
+			.notNull()
+			.references(() => user.id),
+		eventTime: timestamp("event_time", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		eventType: playbackEventType("event_type").notNull(),
+		playbackPosition: integer("playback_position").notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		index("video_playback_event_user_id_idx").on(table.userId),
+		index("video_playback_event_video_id_idx").on(table.videoId)
+	]
+)
