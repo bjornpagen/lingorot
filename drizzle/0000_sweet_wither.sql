@@ -1,6 +1,7 @@
 CREATE TYPE "public"."chat_role" AS ENUM('user', 'ai');--> statement-breakpoint
 CREATE TYPE "public"."difficulty" AS ENUM('beginner', 'intermediate', 'advanced');--> statement-breakpoint
 CREATE TYPE "public"."expiry_type" AS ENUM('claims', 'date');--> statement-breakpoint
+CREATE TYPE "public"."playback_event_type" AS ENUM('start', 'pause', 'resume', 'end');--> statement-breakpoint
 CREATE TABLE "lingorot_account" (
 	"id" char(24) PRIMARY KEY NOT NULL,
 	"user_id" char(24) NOT NULL,
@@ -158,6 +159,18 @@ CREATE TABLE "lingorot_video" (
 	"url" text GENERATED ALWAYS AS ('https://stream.mux.com/' || mux_playback_id || '.m3u8') STORED NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "lingorot_video_playback_event" (
+	"id" char(24) NOT NULL,
+	"session_id" char(24) NOT NULL,
+	"video_id" char(24) NOT NULL,
+	"user_id" char(24) NOT NULL,
+	"event_time" timestamp NOT NULL,
+	"event_type" "playback_event_type" NOT NULL,
+	"playback_position" integer NOT NULL,
+	"created_at" timestamp NOT NULL,
+	CONSTRAINT "lingorot_video_playback_event_id_event_time_pk" PRIMARY KEY("id","event_time")
+);
+--> statement-breakpoint
 CREATE TABLE "lingorot_video_word" (
 	"id" char(24) PRIMARY KEY NOT NULL,
 	"created_at" timestamp NOT NULL,
@@ -181,6 +194,8 @@ ALTER TABLE "lingorot_user_interest" ADD CONSTRAINT "lingorot_user_interest_sub_
 ALTER TABLE "lingorot_user_language_level" ADD CONSTRAINT "lingorot_user_language_level_user_id_lingorot_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."lingorot_user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "lingorot_user_language_level" ADD CONSTRAINT "lingorot_user_language_level_language_id_lingorot_language_code_fk" FOREIGN KEY ("language_id") REFERENCES "public"."lingorot_language"("code") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "lingorot_video" ADD CONSTRAINT "lingorot_video_language_id_lingorot_language_code_fk" FOREIGN KEY ("language_id") REFERENCES "public"."lingorot_language"("code") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "lingorot_video_playback_event" ADD CONSTRAINT "lingorot_video_playback_event_video_id_lingorot_video_id_fk" FOREIGN KEY ("video_id") REFERENCES "public"."lingorot_video"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "lingorot_video_playback_event" ADD CONSTRAINT "lingorot_video_playback_event_user_id_lingorot_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."lingorot_user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "lingorot_video_word" ADD CONSTRAINT "lingorot_video_word_video_id_lingorot_video_id_fk" FOREIGN KEY ("video_id") REFERENCES "public"."lingorot_video"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "challenges_title_idx" ON "lingorot_challenge" USING btree ("title");--> statement-breakpoint
 CREATE INDEX "challenge_peers_challenge_id_idx" ON "lingorot_challenge_peer" USING btree ("challenge_id");--> statement-breakpoint
@@ -194,5 +209,7 @@ CREATE INDEX "user_interests_user_id_idx" ON "lingorot_user_interest" USING btre
 CREATE INDEX "user_language_levels_user_id_idx" ON "lingorot_user_language_level" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "videos_title_idx" ON "lingorot_video" USING btree ("title");--> statement-breakpoint
 CREATE INDEX "videos_language_id_idx" ON "lingorot_video" USING btree ("language_id");--> statement-breakpoint
+CREATE INDEX "video_playback_event_user_id_idx" ON "lingorot_video_playback_event" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "video_playback_event_video_id_idx" ON "lingorot_video_playback_event" USING btree ("video_id");--> statement-breakpoint
 CREATE INDEX "video_word_video_id_idx" ON "lingorot_video_word" USING btree ("video_id");--> statement-breakpoint
 CREATE INDEX "video_word_time_offset_idx" ON "lingorot_video_word" USING btree ("time_offset");

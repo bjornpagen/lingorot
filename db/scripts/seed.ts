@@ -33,6 +33,7 @@ async function seed() {
 	await db.delete(schema.account)
 	await db.delete(schema.user)
 	await db.delete(schema.language)
+	await db.delete(schema.videoPlaybackEvent)
 	const languagesData = [
 		{ code: "en", name: "English", emoji: "🇬🇧" },
 		{ code: "es", name: "Spanish", emoji: "🇪🇸" },
@@ -463,6 +464,58 @@ async function seed() {
 
 	for (const chunk of chunkify(userLanguageLevelsRows)) {
 		await db.insert(schema.userLanguageLevel).values(chunk)
+	}
+	const videoPlaybackEventRows = []
+	for (const video of insertedVideos) {
+		const selectedUserIds = faker.helpers.arrayElements(userIds, 3)
+		for (const userId of selectedUserIds) {
+			const sessionId = faker.string.alphanumeric(24)
+			// Generate a start event
+			videoPlaybackEventRows.push({
+				sessionId,
+				videoId: video.id,
+				userId,
+				eventTime: faker.date.recent(),
+				eventType: "start" as const,
+				playbackPosition: 0
+			})
+
+			// Generate some pause/resume events
+			const pauseCount = faker.number.int({ min: 0, max: 3 })
+			for (let i = 0; i < pauseCount; i++) {
+				const position = faker.number.int({ min: 1, max: 300 })
+				videoPlaybackEventRows.push({
+					sessionId,
+					videoId: video.id,
+					userId,
+					eventTime: faker.date.recent(),
+					eventType: "pause" as const,
+					playbackPosition: position
+				})
+				videoPlaybackEventRows.push({
+					sessionId,
+					videoId: video.id,
+					userId,
+					eventTime: faker.date.recent(),
+					eventType: "resume" as const,
+					playbackPosition: position
+				})
+			}
+
+			// Generate an end event
+			videoPlaybackEventRows.push({
+				sessionId,
+				videoId: video.id,
+				userId,
+				eventTime: faker.date.recent(),
+				eventType: "end" as const,
+				playbackPosition: faker.number.int({ min: 250, max: 300 })
+			})
+		}
+	}
+
+	for (const chunk of chunkify(videoPlaybackEventRows)) {
+		await db.insert(schema.videoPlaybackEvent).values(chunk)
 	}
 	console.log("Seed completed!")
 }

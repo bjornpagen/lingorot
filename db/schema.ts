@@ -472,7 +472,7 @@ export const playbackEventType = pgEnum("playback_event_type", [
 export const videoPlaybackEvent = createTable(
 	"video_playback_event",
 	{
-		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		id: char("id", { length: 24 }).notNull().$default(createId),
 		sessionId: char("session_id", { length: 24 }).notNull(),
 		videoId: char("video_id", { length: 24 })
 			.notNull()
@@ -490,6 +490,7 @@ export const videoPlaybackEvent = createTable(
 			.$defaultFn(() => new Date())
 	},
 	(table) => [
+		primaryKey({ columns: [table.id, table.eventTime] }),
 		index("video_playback_event_user_id_idx").on(table.userId),
 		index("video_playback_event_video_id_idx").on(table.videoId)
 	]

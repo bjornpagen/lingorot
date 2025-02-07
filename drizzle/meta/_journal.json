@@ -5,8 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1738887756185,
-      "tag": "0000_remarkable_switch",
+      "when": 1738896145604,
+      "tag": "0000_sweet_wither",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1738896178094,
+      "tag": "0001_convert_video_playback_event_to_hypertable",
       "breakpoints": true
     }
   ]

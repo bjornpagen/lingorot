@@ -5,6 +5,7 @@ import * as schema from "@/db/schema"
 
 async function dropTables() {
 	const tables = [
+		schema.videoPlaybackEvent,
 		schema.chatMessage,
 		schema.videoWord,
 		schema.userChallengeWord,
@@ -39,7 +40,12 @@ async function dropTables() {
 		}
 	}
 
-	const enums = [schema.difficulty, schema.expiryType, schema.chatRole]
+	const enums = [
+		schema.playbackEventType,
+		schema.difficulty,
+		schema.expiryType,
+		schema.chatRole
+	]
 	for (const enumType of enums) {
 		const exists = await db.execute(
 			sql`SELECT EXISTS (

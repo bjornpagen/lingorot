@@ -1,6 +1,6 @@
 {
-  "id": "19956aff-e2e1-41e0-aba7-0d15e76ece91",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "bf0953f9-083c-48f8-a25e-5d51e294ca4a",
+  "prevId": "19956aff-e2e1-41e0-aba7-0d15e76ece91",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -92,15 +92,15 @@
         "lingorot_account_user_id_lingorot_user_id_fk": {
           "name": "lingorot_account_user_id_lingorot_user_id_fk",
           "tableFrom": "lingorot_account",
-          "tableTo": "lingorot_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "lingorot_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -195,9 +195,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -271,24 +271,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_challenge_peer_challenge_id_lingorot_challenge_id_fk": {
           "name": "lingorot_challenge_peer_challenge_id_lingorot_challenge_id_fk",
           "tableFrom": "lingorot_challenge_peer",
-          "tableTo": "lingorot_challenge",
           "columnsFrom": [
             "challenge_id"
           ],
+          "tableTo": "lingorot_challenge",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -338,28 +338,28 @@
         "lingorot_chat_message_video_id_lingorot_video_id_fk": {
           "name": "lingorot_chat_message_video_id_lingorot_video_id_fk",
           "tableFrom": "lingorot_chat_message",
-          "tableTo": "lingorot_video",
           "columnsFrom": [
             "video_id"
           ],
+          "tableTo": "lingorot_video",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "lingorot_chat_message_user_id_lingorot_user_id_fk": {
           "name": "lingorot_chat_message_user_id_lingorot_user_id_fk",
           "tableFrom": "lingorot_chat_message",
-          "tableTo": "lingorot_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "lingorot_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -411,9 +411,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -464,9 +464,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -534,15 +534,15 @@
         "lingorot_session_user_id_lingorot_user_id_fk": {
           "name": "lingorot_session_user_id_lingorot_user_id_fk",
           "tableFrom": "lingorot_session",
-          "tableTo": "lingorot_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "lingorot_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -599,24 +599,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_sub_interest_interest_id_lingorot_interest_id_fk": {
           "name": "lingorot_sub_interest_interest_id_lingorot_interest_id_fk",
           "tableFrom": "lingorot_sub_interest",
-          "tableTo": "lingorot_interest",
           "columnsFrom": [
             "interest_id"
           ],
+          "tableTo": "lingorot_interest",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -720,15 +720,15 @@
         "lingorot_user_current_language_id_lingorot_language_code_fk": {
           "name": "lingorot_user_current_language_id_lingorot_language_code_fk",
           "tableFrom": "lingorot_user",
-          "tableTo": "lingorot_language",
           "columnsFrom": [
             "current_language_id"
           ],
+          "tableTo": "lingorot_language",
           "columnsTo": [
             "code"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -791,9 +791,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "user_challenges_challenge_id_idx": {
           "name": "user_challenges_challenge_id_idx",
@@ -806,37 +806,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_user_challenge_user_id_lingorot_user_id_fk": {
           "name": "lingorot_user_challenge_user_id_lingorot_user_id_fk",
           "tableFrom": "lingorot_user_challenge",
-          "tableTo": "lingorot_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "lingorot_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "lingorot_user_challenge_challenge_id_lingorot_challenge_id_fk": {
           "name": "lingorot_user_challenge_challenge_id_lingorot_challenge_id_fk",
           "tableFrom": "lingorot_user_challenge",
-          "tableTo": "lingorot_challenge",
           "columnsFrom": [
             "challenge_id"
           ],
+          "tableTo": "lingorot_challenge",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -898,24 +898,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_user_challenge_word_user_challenge_id_lingorot_user_challenge_id_fk": {
           "name": "lingorot_user_challenge_word_user_challenge_id_lingorot_user_challenge_id_fk",
           "tableFrom": "lingorot_user_challenge_word",
-          "tableTo": "lingorot_user_challenge",
           "columnsFrom": [
             "user_challenge_id"
           ],
+          "tableTo": "lingorot_user_challenge",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -959,37 +959,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_user_interest_user_id_lingorot_user_id_fk": {
           "name": "lingorot_user_interest_user_id_lingorot_user_id_fk",
           "tableFrom": "lingorot_user_interest",
-          "tableTo": "lingorot_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "lingorot_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "lingorot_user_interest_sub_interest_id_lingorot_sub_interest_id_fk": {
           "name": "lingorot_user_interest_sub_interest_id_lingorot_sub_interest_id_fk",
           "tableFrom": "lingorot_user_interest",
-          "tableTo": "lingorot_sub_interest",
           "columnsFrom": [
             "sub_interest_id"
           ],
+          "tableTo": "lingorot_sub_interest",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1041,8 +1041,8 @@
           "primaryKey": false,
           "notNull": true,
           "generated": {
-            "as": "FLOOR(SQRT(stars / 10.0) + 1)::integer",
-            "type": "stored"
+            "type": "stored",
+            "as": "FLOOR(SQRT(stars / 10.0) + 1)::integer"
           }
         }
       },
@@ -1058,37 +1058,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_user_language_level_user_id_lingorot_user_id_fk": {
           "name": "lingorot_user_language_level_user_id_lingorot_user_id_fk",
           "tableFrom": "lingorot_user_language_level",
-          "tableTo": "lingorot_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "lingorot_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "lingorot_user_language_level_language_id_lingorot_language_code_fk": {
           "name": "lingorot_user_language_level_language_id_lingorot_language_code_fk",
           "tableFrom": "lingorot_user_language_level",
-          "tableTo": "lingorot_language",
           "columnsFrom": [
             "language_id"
           ],
+          "tableTo": "lingorot_language",
           "columnsTo": [
             "code"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1213,8 +1213,8 @@
           "primaryKey": false,
           "notNull": true,
           "generated": {
-            "as": "'https://image.mux.com/' || mux_playback_id || '/thumbnail.png'",
-            "type": "stored"
+            "type": "stored",
+            "as": "'https://image.mux.com/' || mux_playback_id || '/thumbnail.png'"
           }
         },
         "url": {
@@ -1223,8 +1223,8 @@
           "primaryKey": false,
           "notNull": true,
           "generated": {
-            "as": "'https://stream.mux.com/' || mux_playback_id || '.m3u8'",
-            "type": "stored"
+            "type": "stored",
+            "as": "'https://stream.mux.com/' || mux_playback_id || '.m3u8'"
           }
         }
       },
@@ -1240,9 +1240,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "videos_language_id_idx": {
           "name": "videos_language_id_idx",
@@ -1255,24 +1255,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_video_language_id_lingorot_language_code_fk": {
           "name": "lingorot_video_language_id_lingorot_language_code_fk",
           "tableFrom": "lingorot_video",
-          "tableTo": "lingorot_language",
           "columnsFrom": [
             "language_id"
           ],
+          "tableTo": "lingorot_language",
           "columnsTo": [
             "code"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1347,9 +1347,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "video_playback_event_video_id_idx": {
           "name": "video_playback_event_video_id_idx",
@@ -1362,37 +1362,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_video_playback_event_video_id_lingorot_video_id_fk": {
           "name": "lingorot_video_playback_event_video_id_lingorot_video_id_fk",
           "tableFrom": "lingorot_video_playback_event",
-          "tableTo": "lingorot_video",
           "columnsFrom": [
             "video_id"
           ],
+          "tableTo": "lingorot_video",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "lingorot_video_playback_event_user_id_lingorot_user_id_fk": {
           "name": "lingorot_video_playback_event_user_id_lingorot_user_id_fk",
           "tableFrom": "lingorot_video_playback_event",
-          "tableTo": "lingorot_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "lingorot_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1456,9 +1456,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "video_word_time_offset_idx": {
           "name": "video_word_time_offset_idx",
@@ -1471,24 +1471,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "lingorot_video_word_video_id_lingorot_video_id_fk": {
           "name": "lingorot_video_word_video_id_lingorot_video_id_fk",
           "tableFrom": "lingorot_video_word",
-          "tableTo": "lingorot_video",
           "columnsFrom": [
             "video_id"
           ],
+          "tableTo": "lingorot_video",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1536,10 +1536,10 @@
     }
   },
   "schemas": {},
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},
