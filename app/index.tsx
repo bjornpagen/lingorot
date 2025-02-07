@@ -45,9 +45,9 @@ async function VideoFeedData() {
 	if (!session) {
 		return <Redirect href="/signin" />
 	}
-
+	const languageId = session.user.currentLanguageId
 	const videos = await getVideos(session.user.id)
-	return <VideoFeed videos={videos} />
+	return <VideoFeed videos={videos} languageId={languageId} />
 }
 
 // Home page - displays the main video feed for language learning content

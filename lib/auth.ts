@@ -17,6 +17,15 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true
 	},
+	user: {
+		additionalFields: {
+			currentLanguageId: {
+				type: "string",
+				required: true,
+				defaultValue: "en"
+			}
+		}
+	},
 	plugins: [expo()],
 	trustedOrigins: ["myapp://"]
 })

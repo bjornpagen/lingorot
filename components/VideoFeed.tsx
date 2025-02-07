@@ -6,7 +6,10 @@ import { useVideoPlayer, VideoView } from "expo-video"
 import { ChatButton } from "./ChatButton"
 import { ChatModal } from "./ChatModal"
 import { theme } from "@/lib/theme"
-import type { Video } from "@/app/index"
+import {
+	getPaginatedVideos,
+	type PaginatedVideo
+} from "@/functions/videoPreloader"
 import type { ViewToken } from "react-native"
 
 const { width, height } = Dimensions.get("window")
@@ -19,7 +22,7 @@ const VideoCard = ({
 	url,
 	thumbnail,
 	isActive
-}: Video & { isActive: boolean }) => {
+}: PaginatedVideo & { isActive: boolean }) => {
 	const player = useVideoPlayer(url, (player) => {
 		player.loop = true
 		player.muted = true
@@ -59,14 +62,21 @@ const VideoCard = ({
 }
 
 interface VideoFeedProps {
-	videos: Video[]
+	videos: PaginatedVideo[]
+	languageId: string
 }
 
-export default function VideoFeed({ videos: initialVideos }: VideoFeedProps) {
-	const [videos] = React.useState(initialVideos)
-	const flatListRef = React.useRef<FlatList<Video>>(null)
+export default function VideoFeed({
+	videos: initialVideos,
+	languageId
+}: VideoFeedProps) {
+	const [videos, setVideos] = React.useState(initialVideos)
+	const flatListRef = React.useRef<FlatList<PaginatedVideo>>(null)
 	const [isChatVisible, setIsChatVisible] = React.useState(false)
 	const [currentVideoIndex, setCurrentVideoIndex] = React.useState(0)
+	const [page, setPage] = React.useState(1)
+	const [loadingMore, setLoadingMore] = React.useState(false)
+	const [hasMore, setHasMore] = React.useState(true)
 
 	const viewabilityConfig = React.useMemo(
 		() => ({ viewAreaCoveragePercentThreshold: 25 }),
@@ -79,6 +89,21 @@ export default function VideoFeed({ videos: initialVideos }: VideoFeedProps) {
 		},
 		[]
 	)
+
+	async function loadMoreVideos() {
+		if (loadingMore || !hasMore) {
+			return
+		}
+		setLoadingMore(true)
+		const nextPage = page + 1
+		const newVideos = await getPaginatedVideos(nextPage, 5, languageId)
+		if (newVideos.length < 5) {
+			setHasMore(false)
+		}
+		setVideos((prev) => [...prev, ...newVideos])
+		setPage(nextPage)
+		setLoadingMore(false)
+	}
 
 	return (
 		<React.Fragment>
@@ -102,6 +127,8 @@ export default function VideoFeed({ videos: initialVideos }: VideoFeedProps) {
 					bounces={false}
 					onViewableItemsChanged={onViewableItemsChanged}
 					viewabilityConfig={viewabilityConfig}
+					onEndReached={loadMoreVideos}
+					onEndReachedThreshold={0.1}
 				/>
 
 				<View style={styles.chatButtonContainer}>
