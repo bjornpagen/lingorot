@@ -12,7 +12,6 @@ import {
 } from "@/functions/videoPreloader"
 import type { ViewToken } from "react-native"
 import { useVideoEventLogger } from "@/hooks/useVideoEventLogger"
-
 const { width, height } = Dimensions.get("window")
 const TAB_BAR_HEIGHT = 70
 const screenHeight = height - TAB_BAR_HEIGHT

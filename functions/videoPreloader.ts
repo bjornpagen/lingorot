@@ -21,7 +21,7 @@ export async function getPaginatedVideos(
 ): Promise<PaginatedVideo[]> {
 	const session = await getSession()
 	if (!session) {
-		throw new Error("Unauthorized")
+		return []
 	}
 
 	return await db

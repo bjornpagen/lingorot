@@ -18,9 +18,9 @@ export const useVideoEventLogger = (
 	videoId: string,
 	isActive: boolean
 ) => {
-	const batchQueueRef = React.useRef<Array<{ videoId: string } & VideoEvent>>(
-		[]
-	)
+	const batchQueueRef = React.useRef<
+		Array<{ videoId: string } & VideoEvent & { eventTimestamp: Date }>
+	>([])
 
 	const flushBatch = React.useCallback(() => {
 		if (batchQueueRef.current.length > 0) {
@@ -44,18 +44,19 @@ export const useVideoEventLogger = (
 
 	const addEventToBatch = React.useCallback(
 		(event: VideoEvent) => {
+			const eventWithTimestamp = { ...event, eventTimestamp: new Date() }
 			if (event.eventType === "timeUpdate") {
 				const queue = batchQueueRef.current
 				if (
 					queue.length &&
 					queue[queue.length - 1].eventType === "timeUpdate"
 				) {
-					queue[queue.length - 1] = { videoId, ...event }
+					queue[queue.length - 1] = { videoId, ...eventWithTimestamp }
 				} else {
-					queue.push({ videoId, ...event })
+					batchQueueRef.current.push({ videoId, ...eventWithTimestamp })
 				}
 			} else {
-				batchQueueRef.current.push({ videoId, ...event })
+				batchQueueRef.current.push({ videoId, ...eventWithTimestamp })
 			}
 		},
 		[videoId]

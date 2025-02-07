@@ -33,15 +33,15 @@ export type VideoEvent =
 export async function logVideoEvent(
 	params: { videoId: string } & VideoEvent
 ): Promise<void> {
-	await logVideoEvents([params])
+	await logVideoEvents([{ ...params, eventTimestamp: new Date() }])
 }
 
 export async function logVideoEvents(
-	events: Array<{ videoId: string } & VideoEvent>
+	events: Array<{ videoId: string } & VideoEvent & { eventTimestamp: Date }>
 ): Promise<void> {
 	const session = await getSession()
 	if (!session) {
-		throw new Error("Unauthorized")
+		return
 	}
 	const now = new Date()
 	const inserts: VideoPlaybackEventInsert[] = []
@@ -51,7 +51,7 @@ export async function logVideoEvents(
 			videoId: event.videoId,
 			userId: session.user.id,
 			eventType: event.eventType,
-			eventTime: now,
+			eventTime: new Date(event.eventTimestamp),
 			createdAt: now
 		}
 		switch (event.eventType) {
