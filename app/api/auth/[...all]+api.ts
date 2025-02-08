@@ -1,4 +1,9 @@
-import { auth } from "@/lib/auth"
+import { getAuth } from "@/lib/auth"
 
-const handler = auth.handler
-export { handler as GET, handler as POST }
+export async function GET(request: Request) {
+	return getAuth().handler(request)
+}
+
+export async function POST(request: Request) {
+	return getAuth().handler(request)
+}
