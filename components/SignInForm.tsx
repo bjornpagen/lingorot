@@ -107,10 +107,10 @@ export default function SignInForm() {
 			password
 		})
 		if (res.error) {
-			console.error(res.error)
-		} else {
-			router.replace("/")
+			console.error(JSON.stringify(res, null, 2))
+			return
 		}
+		router.replace("/")
 	}
 
 	return (
