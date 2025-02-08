@@ -77,7 +77,6 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 			onRequestClose={onClose}
 		>
 			<View style={styles.modalContainer}>
-				<View style={styles.safeAreaTop} />
 				<View style={styles.modalContent}>
 					<View style={styles.header}>
 						<Text style={styles.title}>Practice Time! 🌟</Text>
@@ -117,7 +116,6 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 							<Ionicons name="send" size={24} color="white" />
 						</TouchableOpacity>
 					</KeyboardAvoidingView>
-					<View style={styles.safeAreaBottom} />
 				</View>
 			</View>
 		</Modal>
@@ -128,12 +126,6 @@ const styles = {
 	modalContainer: {
 		flex: 1,
 		backgroundColor: "rgba(0, 0, 0, 0.5)"
-	},
-	safeAreaTop: {
-		paddingTop: 47
-	},
-	safeAreaBottom: {
-		paddingBottom: 34
 	},
 	modalContent: {
 		flex: 1,
@@ -147,7 +139,9 @@ const styles = {
 		},
 		shadowOpacity: 0.1,
 		shadowRadius: 5,
-		elevation: 5
+		elevation: 5,
+		marginTop: 80,
+		paddingBottom: 34
 	},
 	header: {
 		flexDirection: "row",
