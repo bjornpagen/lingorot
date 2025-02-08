@@ -11,7 +11,8 @@ import {
 	pgEnum,
 	check,
 	primaryKey,
-	date
+	date,
+	uniqueIndex
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { relations } from "drizzle-orm"
@@ -125,6 +126,57 @@ export const difficulty = pgEnum("difficulty", [
 ])
 
 export const expiryType = pgEnum("expiry_type", ["claims", "date"])
+
+export const chatRole = pgEnum("chat_role", ["user", "ai"])
+
+export const chatMessage = createTable(
+	"chat_message",
+	{
+		videoId: char("video_id", { length: 24 })
+			.notNull()
+			.references(() => video.id),
+		userId: char("user_id", { length: 24 })
+			.notNull()
+			.references(() => user.id),
+		role: chatRole("role").notNull(),
+		text: text("text").notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$default(() => new Date())
+	},
+	(table) => [primaryKey({ columns: [table.videoId, table.userId] })]
+)
+
+export const playbackEventType = pgEnum("playback_event_type", [
+	"viewinit",
+	"viewend",
+	"statusChange",
+	"error",
+	"play",
+	"pause",
+	"playbackRateChange",
+	"volumeChange",
+	"mutedChange",
+	"ended",
+	"timeUpdate",
+	"sourceChange"
+])
+
+export const cefrLevel = pgEnum("cefr_level", [
+	"A1",
+	"A2",
+	"B1",
+	"B2",
+	"C1",
+	"C2"
+])
+
+export const gutenbergVideoStatus = pgEnum("gutenberg_video_status", [
+	"pending",
+	"processing",
+	"completed",
+	"failed"
+])
 
 export const language = createTable(
 	"language",
@@ -255,35 +307,130 @@ export const subInterest = createTable(
 	(table) => [index("sub_interests_interest_id_idx").on(table.interestId)]
 )
 
+export const book = createTable(
+	"book",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		gutenbergId: integer("gutenberg_id").unique().notNull(),
+		title: text("title").notNull(),
+		author: text("author").notNull(),
+		languageId: char("language_id", { length: 2 })
+			.notNull()
+			.references(() => language.code),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		index("book_gutenberg_id_idx").on(table.gutenbergId),
+		index("book_language_id_idx").on(table.languageId)
+	]
+)
+
+export const bookSection = createTable(
+	"book_section",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		bookId: char("book_id", { length: 24 })
+			.notNull()
+			.references(() => book.id),
+		name: text("name").notNull(),
+		position: integer("position").notNull(),
+		content: text("content").notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		index("book_section_book_position_idx").on(table.bookId, table.position)
+	]
+)
+
+export const bookSectionTranslation = createTable(
+	"book_section_translation",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		sectionId: char("section_id", { length: 24 })
+			.notNull()
+			.references(() => bookSection.id, { onDelete: "cascade" }),
+		languageId: char("language_id", { length: 2 })
+			.notNull()
+			.references(() => language.code),
+		region: text("region").notNull(),
+		content: text("content").notNull(),
+		cefrLevel: cefrLevel("cefr_level").notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		uniqueIndex("unique_section_lang_region_idx").on(
+			table.sectionId,
+			table.languageId,
+			table.region
+		),
+		index("section_language_idx").on(table.sectionId, table.languageId)
+	]
+)
+
+export const bookRelations = relations(book, ({ one, many }) => ({
+	language: one(language, {
+		fields: [book.languageId],
+		references: [language.code]
+	}),
+	sections: many(bookSection)
+}))
+
+export const bookSectionRelations = relations(bookSection, ({ one, many }) => ({
+	book: one(book, {
+		fields: [bookSection.bookId],
+		references: [book.id]
+	}),
+	translations: many(bookSectionTranslation),
+	video: many(video)
+}))
+
+export const bookSectionTranslationRelations = relations(
+	bookSectionTranslation,
+	({ one }) => ({
+		section: one(bookSection, {
+			fields: [bookSectionTranslation.sectionId],
+			references: [bookSection.id]
+		}),
+		language: one(language, {
+			fields: [bookSectionTranslation.languageId],
+			references: [language.code]
+		})
+	})
+)
+
 export const video = createTable(
 	"video",
 	{
 		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
-			.$default(() => new Date()),
-		title: text("title").notNull(),
-		description: text("description").notNull().default(""),
-		muxAssetId: text("mux_asset_id").notNull(),
-		muxPlaybackId: text("mux_playback_id").notNull(),
+			.$defaultFn(() => new Date()),
+		bookSectionId: char("book_section_id", { length: 24 })
+			.notNull()
+			.references(() => bookSection.id),
+		status: gutenbergVideoStatus("status").notNull().default("pending"),
+		muxAssetId: text("mux_asset_id"),
+		muxPlaybackId: text("mux_playback_id"),
 		muxTranscript: text("mux_transcript"),
 		languageId: char("language_id", { length: 2 })
 			.notNull()
 			.references(() => language.code),
-		thumbnail: text("thumbnail")
-			.notNull()
-			.generatedAlwaysAs(
-				sql`'https://image.mux.com/' || mux_playback_id || '/thumbnail.png'`
-			),
-		url: text("url")
-			.notNull()
-			.generatedAlwaysAs(
-				sql`'https://stream.mux.com/' || mux_playback_id || '.m3u8'`
-			)
+		thumbnail: text("thumbnail").generatedAlwaysAs(
+			sql`CASE WHEN mux_playback_id IS NOT NULL THEN 'https://image.mux.com/' || mux_playback_id || '/thumbnail.png' ELSE NULL END`
+		),
+		url: text("url").generatedAlwaysAs(
+			sql`CASE WHEN mux_playback_id IS NOT NULL THEN 'https://stream.mux.com/' || mux_playback_id || '.m3u8' ELSE NULL END`
+		)
 	},
 	(table) => [
-		index("videos_title_idx").on(table.title),
-		index("videos_language_id_idx").on(table.languageId)
+		index("video_book_section_idx").on(table.bookSectionId),
+		index("video_language_id_idx").on(table.languageId)
 	]
 )
 
@@ -327,26 +474,6 @@ export const userLanguageLevel = createTable(
 		index("user_language_levels_user_id_idx").on(table.userId),
 		primaryKey({ columns: [table.userId, table.languageId] })
 	]
-)
-
-export const chatRole = pgEnum("chat_role", ["user", "ai"])
-
-export const chatMessage = createTable(
-	"chat_message",
-	{
-		videoId: char("video_id", { length: 24 })
-			.notNull()
-			.references(() => video.id),
-		userId: char("user_id", { length: 24 })
-			.notNull()
-			.references(() => user.id),
-		role: chatRole("role").notNull(),
-		text: text("text").notNull(),
-		createdAt: timestamp("created_at", { mode: "date" })
-			.notNull()
-			.$default(() => new Date())
-	},
-	(table) => [primaryKey({ columns: [table.videoId, table.userId] })]
 )
 
 export const userInterest = createTable(
@@ -400,7 +527,9 @@ export const usersRelations = relations(user, ({ many, one }) => ({
 
 export const languagesRelations = relations(language, ({ many }) => ({
 	userLanguageLevels: many(userLanguageLevel),
-	videos: many(video)
+	videos: many(video),
+	books: many(book),
+	translations: many(bookSectionTranslation)
 }))
 
 export const userChallengesRelations = relations(
@@ -429,6 +558,10 @@ export const userChallengeWordsRelations = relations(
 )
 
 export const videosRelations = relations(video, ({ one }) => ({
+	bookSection: one(bookSection, {
+		fields: [video.bookSectionId],
+		references: [bookSection.id]
+	}),
 	language: one(language, {
 		fields: [video.languageId],
 		references: [language.code]
@@ -462,21 +595,6 @@ export const userLanguageLevelRelations = relations(
 		})
 	})
 )
-
-export const playbackEventType = pgEnum("playback_event_type", [
-	"viewinit",
-	"viewend",
-	"statusChange",
-	"error",
-	"play",
-	"pause",
-	"playbackRateChange",
-	"volumeChange",
-	"mutedChange",
-	"ended",
-	"timeUpdate",
-	"sourceChange"
-])
 
 export const videoPlaybackEvent = createTable(
 	"video_playback_event",
