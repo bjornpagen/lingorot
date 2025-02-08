@@ -127,6 +127,9 @@ export default function SignInForm() {
 				value={email}
 				onChangeText={setEmail}
 				placeholderTextColor={theme.colors.text.secondary}
+				autoCapitalize="none"
+				autoCorrect={false}
+				spellCheck={false}
 			/>
 			<TextInput
 				style={styles.input}
@@ -135,6 +138,8 @@ export default function SignInForm() {
 				onChangeText={setPassword}
 				secureTextEntry
 				placeholderTextColor={theme.colors.text.secondary}
+				onSubmitEditing={handleLogin}
+				returnKeyType="go"
 			/>
 			<Pressable style={styles.button} onPress={handleLogin}>
 				<Text style={styles.buttonText}>Sign In</Text>

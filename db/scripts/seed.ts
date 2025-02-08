@@ -8,8 +8,8 @@ type InsertChallenge = typeof schema.challenge.$inferInsert
 type InsertVideoPlaybackEvent = typeof schema.videoPlaybackEvent.$inferInsert
 
 const BATCH_SIZE = 5000
-const MUX_ASSET_ID = "lLLzoMYxXku1lvXSFKPu01G7fdOrugluHO16MzI35Cn00"
-const MUX_PLAYBACK_ID = "lNF9zfcunqkk029LtRezZEch7AIH933SH02Qf9tngf01D4"
+const MUX_ASSET_ID = "tPD9AjM4IRFFfqMEzPAiyen3CZHZb4nJ9sGo3Q6vtPw"
+const MUX_PLAYBACK_ID = "a27R02EwLL1C600q6fAU3cLidz02HW4SuIbiZPPwU56g7w"
 
 function chunkify<T>(array: T[]): T[][] {
 	const chunks: T[][] = []

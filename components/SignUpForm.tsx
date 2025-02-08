@@ -97,7 +97,7 @@ export default function SignUpForm() {
 	const [password, setPassword] = React.useState("")
 	const router = useRouter()
 
-	const handleLogin = async () => {
+	const handleSignUp = async () => {
 		const res = await authClient.signUp.email({
 			email,
 			password,
@@ -125,6 +125,7 @@ export default function SignUpForm() {
 				value={name}
 				onChangeText={setName}
 				placeholderTextColor={theme.colors.text.secondary}
+				autoCapitalize="none"
 			/>
 			<TextInput
 				style={styles.input}
@@ -133,6 +134,9 @@ export default function SignUpForm() {
 				onChangeText={setEmail}
 				keyboardType="email-address"
 				placeholderTextColor={theme.colors.text.secondary}
+				autoCapitalize="none"
+				autoCorrect={false}
+				spellCheck={false}
 			/>
 			<TextInput
 				style={styles.input}
@@ -141,8 +145,10 @@ export default function SignUpForm() {
 				onChangeText={setPassword}
 				secureTextEntry
 				placeholderTextColor={theme.colors.text.secondary}
+				onSubmitEditing={handleSignUp}
+				returnKeyType="go"
 			/>
-			<Pressable style={styles.button} onPress={handleLogin}>
+			<Pressable style={styles.button} onPress={handleSignUp}>
 				<Text style={styles.buttonText}>Sign Up</Text>
 			</Pressable>
 			<Pressable
