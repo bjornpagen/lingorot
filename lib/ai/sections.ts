@@ -213,12 +213,12 @@ async function getLLMResponse(numberedChunk: string): Promise<string | null> {
 			"deepseek/deepseek-chat"
 		)
 
-		if (!response.content) {
+		if (!response) {
 			console.log("Received null response from LLM")
 			return null
 		}
 		console.log("Received valid response from LLM")
-		return response.content.trim()
+		return response.trim()
 	} catch (error) {
 		console.error(`Error while fetching LLM response: ${error}`)
 		return null
@@ -329,7 +329,7 @@ export async function extractTextSections(text: string): Promise<Section[]> {
 		}
 
 		const lines = numberedChunk.split("\n")
-		const lastLine = lines[lines.length - 1]!
+		const lastLine = lines[lines.length - 1]
 		const match = lastLine.match(/^(\d+):/)
 		if (!match || !match[1]) {
 			console.error(`Failed to extract line number from last line: ${lastLine}`)
@@ -353,7 +353,7 @@ export async function extractTextSections(text: string): Promise<Section[]> {
 			console.log("Found unnamed first section, merging with previous section")
 			const unnamedSection = sections.shift()
 			if (unnamedSection && allSections.length > 0) {
-				allSections[allSections.length - 1]!.lastLine = unnamedSection.lastLine
+				allSections[allSections.length - 1].lastLine = unnamedSection.lastLine
 			}
 		}
 

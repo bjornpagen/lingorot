@@ -387,7 +387,7 @@ export const bookSectionRelations = relations(bookSection, ({ one, many }) => ({
 		references: [book.id]
 	}),
 	translations: many(bookSectionTranslation),
-	video: many(video)
+	baseVideos: many(baseVideo)
 }))
 
 export const bookSectionTranslationRelations = relations(
@@ -404,35 +404,101 @@ export const bookSectionTranslationRelations = relations(
 	})
 )
 
-export const video = createTable(
-	"video",
+export const file = createTable(
+	"file",
 	{
 		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
 			.$defaultFn(() => new Date()),
+		name: text("name").notNull(),
+		size: integer("size").notNull(),
+		type: text("type").notNull(),
+		url: text("url").notNull()
+	},
+	(table) => [index("file_name_idx").on(table.name)]
+)
+
+export const baseVideo = createTable(
+	"base_video",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
 		bookSectionId: char("book_section_id", { length: 24 })
 			.notNull()
 			.references(() => bookSection.id),
+		fileId: char("file_id", { length: 24 }).references(() => file.id),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index("base_video_book_section_idx").on(table.bookSectionId)]
+)
+
+export const video = createTable(
+	"video",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		baseVideoId: char("base_video_id", { length: 24 })
+			.notNull()
+			.references(() => baseVideo.id),
+		bookSectionTranslationId: char("book_section_translation_id", {
+			length: 24
+		})
+			.notNull()
+			.references(() => bookSectionTranslation.id, { onDelete: "cascade" }),
+		languageId: char("language_id", { length: 2 })
+			.notNull()
+			.references(() => language.code),
+		cefrLevel: cefrLevel("cefr_level").notNull(),
 		status: gutenbergVideoStatus("status").notNull().default("pending"),
 		muxAssetId: text("mux_asset_id"),
 		muxPlaybackId: text("mux_playback_id"),
 		muxTranscript: text("mux_transcript"),
-		languageId: char("language_id", { length: 2 })
-			.notNull()
-			.references(() => language.code),
+		subtitleGeneratedAt: timestamp("subtitle_generated_at", {
+			mode: "date"
+		}),
 		thumbnail: text("thumbnail").generatedAlwaysAs(
 			sql`CASE WHEN mux_playback_id IS NOT NULL THEN 'https://image.mux.com/' || mux_playback_id || '/thumbnail.png' ELSE NULL END`
 		),
 		url: text("url").generatedAlwaysAs(
-			sql`CASE WHEN mux_playback_id IS NOT NULL THEN 'https://stream.mux.com/' || mux_playback_id || '.m3u8' ELSE NULL END`
-		)
+			sql`CASE WHEN mux_playback_id IS NOT NULL THEN 'https://stream.mux.com/' || mux_playback_id || '.m3u8?default_subtitles_lang=' || language_id ELSE NULL END`
+		),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
 	},
 	(table) => [
-		index("video_book_section_idx").on(table.bookSectionId),
-		index("video_language_id_idx").on(table.languageId)
+		index("video_base_video_idx").on(table.baseVideoId),
+		index("video_language_idx").on(table.languageId)
 	]
 )
+
+export const baseVideoRelations = relations(baseVideo, ({ one, many }) => ({
+	bookSection: one(bookSection, {
+		fields: [baseVideo.bookSectionId],
+		references: [bookSection.id]
+	}),
+	file: one(file, {
+		fields: [baseVideo.fileId],
+		references: [file.id]
+	}),
+	videos: many(video)
+}))
+
+export const videoRelations = relations(video, ({ one }) => ({
+	baseVideo: one(baseVideo, {
+		fields: [video.baseVideoId],
+		references: [baseVideo.id]
+	}),
+	translation: one(bookSectionTranslation, {
+		fields: [video.bookSectionTranslationId],
+		references: [bookSectionTranslation.id]
+	}),
+	language: one(language, {
+		fields: [video.languageId],
+		references: [language.code]
+	})
+}))
 
 export const videoWord = createTable(
 	"video_word",
@@ -556,17 +622,6 @@ export const userChallengeWordsRelations = relations(
 		})
 	})
 )
-
-export const videosRelations = relations(video, ({ one }) => ({
-	bookSection: one(bookSection, {
-		fields: [video.bookSectionId],
-		references: [bookSection.id]
-	}),
-	language: one(language, {
-		fields: [video.languageId],
-		references: [language.code]
-	})
-}))
 
 export const challengePeerRelations = relations(challengePeer, ({ one }) => ({
 	challenge: one(challenge, {
