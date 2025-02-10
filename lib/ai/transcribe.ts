@@ -1,4 +1,4 @@
-import "server-only"
+//import "server-only"
 import { createCompletion } from "@/lib/ai/common"
 
 type CEFRLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
@@ -160,26 +160,22 @@ export async function transcribeText(
 		region,
 		cefrLevel
 	)
+	const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim())
+	const transcriptionChunks: string[] = []
 
-	const response = await createCompletion([
-		{
-			role: "system",
-			content: systemPrompt
-		},
-		{
-			role: "user",
-			content: text
+	for (const paragraph of paragraphs) {
+		const response = await createCompletion([
+			{ role: "system", content: systemPrompt },
+			{ role: "user", content: paragraph }
+		])
+		if (!response) {
+			return null
 		}
-	])
-
-	if (!response) {
-		return null
+		const match = response.match(/<transcription>([\s\S]*?)<\/transcription>/)
+		if (!match) {
+			return null
+		}
+		transcriptionChunks.push(match[1].trim())
 	}
-
-	const match = response.match(/<transcription>([\s\S]*?)<\/transcription>/)
-	if (!match) {
-		return null
-	}
-
-	return match[1]?.trim() ?? null
+	return transcriptionChunks.join("\n\n")
 }

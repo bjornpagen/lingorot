@@ -49,7 +49,8 @@ async function seed() {
 		{ code: "fr", name: "French", emoji: "🇫🇷" },
 		{ code: "ar", name: "Arabic", emoji: "🇸🇦" },
 		{ code: "zh", name: "Chinese", emoji: "🇨🇳" },
-		{ code: "ru", name: "Russian", emoji: "🇷🇺" }
+		{ code: "ru", name: "Russian", emoji: "🇷🇺" },
+		{ code: "fi", name: "Finnish", emoji: "🇫🇮" }
 	]
 	const languageResults = await db
 		.insert(schema.language)

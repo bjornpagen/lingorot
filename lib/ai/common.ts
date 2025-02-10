@@ -15,7 +15,7 @@ const openai = new OpenAI({
 // Create rate limiter: 5 requests per second
 const limit = pLimit(5)
 
-export const DEFAULT_TRANSLATION_MODEL = "anthropic/claude-3.5-sonnet" as const
+export const DEFAULT_TRANSLATION_MODEL = "gpt-4o"
 
 export async function createCompletion(
 	messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
