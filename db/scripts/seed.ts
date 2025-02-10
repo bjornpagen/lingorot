@@ -31,6 +31,11 @@ async function seed() {
 	await db.delete(schema.userInterest)
 	await db.delete(schema.challenge)
 	await db.delete(schema.video)
+	await db.delete(schema.baseVideo)
+	await db.delete(schema.bookSectionTranslation)
+	await db.delete(schema.bookSection)
+	await db.delete(schema.book)
+	await db.delete(schema.file)
 	await db.delete(schema.subInterest)
 	await db.delete(schema.interest)
 	await db.delete(schema.verification)
@@ -389,16 +394,21 @@ async function seed() {
 		await db.insert(schema.challengePeer).values(chunk)
 	}
 	const videoRows = Array.from(languageCodes).flatMap((languageId) => {
-		return Array.from({ length: 100 }, () => ({
-			title: faker.lorem.sentence(),
-			description: faker.lorem.paragraph(),
-			muxAssetId: MUX_ASSET_ID,
-			muxPlaybackId: MUX_PLAYBACK_ID,
-			muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
-				probability: 0.5
-			}),
-			languageId
-		}))
+		return Array.from({ length: 100 }, () => {
+			const baseVideoId = faker.string.uuid()
+			const bookSectionTranslationId = faker.string.uuid()
+			return {
+				baseVideoId,
+				bookSectionTranslationId,
+				languageId,
+				cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
+				muxAssetId: MUX_ASSET_ID,
+				muxPlaybackId: MUX_PLAYBACK_ID,
+				muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
+					probability: 0.5
+				})
+			}
+		})
 	})
 	const insertedVideos = await db
 		.insert(schema.video)
