@@ -27,6 +27,11 @@ CRITICAL RULES:
 - Each section MUST continue until the next section header is found - do not end sections early
 - If no new section header is found, the section should continue to the end of the provided text
 
+CHUNK BOUNDARIES RULE:
+- Each text chunk is a discrete, contiguous portion of the text with no overlapping lines.
+- Every line of text appears in exactly one chunk.
+- If a chapter or section header appears at the very beginning of a chunk, it should be treated as fully belonging to that chunk.
+
 NOT Section Headers (Ignore These):
 - Decorative separators like "* * *" or "-----" or "§"
 - Roman numerals (I., II., III., etc.) within chapters
