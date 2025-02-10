@@ -19,7 +19,7 @@
 		"db:push": "drizzle-kit push",
 		"db:drop": "tsx db/scripts/drop.ts",
 		"db:seed": "tsx db/scripts/seed.ts",
-		"deploy:web": "expo export --platform web && eas deploy",
+		"build:web": "expo export --platform web",
 		"postinstall": "patch-package"
 	},
 	"jest": {
