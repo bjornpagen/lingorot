@@ -19,52 +19,60 @@ import { relations } from "drizzle-orm"
 
 export const createTable = pgTableCreator((name) => `lingorot_${name}`)
 
-export const user = createTable("user", {
-	id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
-	name: text("name").notNull(),
-	email: text("email").notNull(),
-	emailVerified: boolean("email_verified").notNull().default(false),
-	image: text("image"),
-	createdAt: timestamp("created_at")
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: timestamp("updated_at")
-		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	bio: text("bio").notNull().default(""),
-	challengesCompleted: integer("challenges_completed").notNull().default(0),
-	wordsLearned: integer("words_learned").notNull().default(0),
-	minutesWatched: integer("minutes_watched").notNull().default(0),
-	daysStreak: integer("days_streak").notNull().default(0),
-	currentLanguageId: char("current_language_id", { length: 2 })
-		.references(() => language.code)
-		.notNull()
-		.default("en")
-})
+export const user = createTable(
+	"user",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		name: text("name").notNull(),
+		email: text("email").notNull(),
+		emailVerified: boolean("email_verified").notNull().default(false),
+		image: text("image"),
+		createdAt: timestamp("created_at")
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at")
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date()),
+		bio: text("bio").notNull().default(""),
+		challengesCompleted: integer("challenges_completed").notNull().default(0),
+		wordsLearned: integer("words_learned").notNull().default(0),
+		minutesWatched: integer("minutes_watched").notNull().default(0),
+		daysStreak: integer("days_streak").notNull().default(0),
+		currentLanguageId: char("current_language_id", { length: 2 })
+			.references(() => language.code)
+			.notNull()
+			.default("en")
+	},
+	(table) => [uniqueIndex("user_email_idx").on(table.email)]
+)
 
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account)
 }))
 
-export const session = createTable("session", {
-	id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
-	userId: char("user_id", { length: 24 })
-		.notNull()
-		.references(() => user.id),
-	token: text("token").notNull(),
-	expiresAt: date("expires_at").notNull(),
-	ipAddress: text("ip_address"),
-	userAgent: text("user_agent"),
-	createdAt: timestamp("created_at")
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: timestamp("updated_at")
-		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date())
-})
+export const session = createTable(
+	"session",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		userId: char("user_id", { length: 24 })
+			.notNull()
+			.references(() => user.id),
+		token: text("token").notNull(),
+		expiresAt: date("expires_at").notNull(),
+		ipAddress: text("ip_address"),
+		userAgent: text("user_agent"),
+		createdAt: timestamp("created_at")
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at")
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [index("session_user_id_idx").on(table.userId)]
+)
 
 export const sessionRelations = relations(session, ({ one }) => ({
 	user: one(user, {
@@ -73,28 +81,32 @@ export const sessionRelations = relations(session, ({ one }) => ({
 	})
 }))
 
-export const account = createTable("account", {
-	id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
-	userId: char("user_id", { length: 24 })
-		.notNull()
-		.references(() => user.id),
-	accountId: text("account_id").notNull(),
-	providerId: text("provider_id").notNull(),
-	accessToken: text("access_token"),
-	refreshToken: text("refresh_token"),
-	accessTokenExpiresAt: date("access_token_expires_at"),
-	refreshTokenExpiresAt: date("refresh_token_expires_at"),
-	scope: text("scope"),
-	idToken: text("id_token"),
-	password: text("password"),
-	createdAt: timestamp("created_at")
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: timestamp("updated_at")
-		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date())
-})
+export const account = createTable(
+	"account",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		userId: char("user_id", { length: 24 })
+			.notNull()
+			.references(() => user.id),
+		accountId: text("account_id").notNull(),
+		providerId: text("provider_id").notNull(),
+		accessToken: text("access_token"),
+		refreshToken: text("refresh_token"),
+		accessTokenExpiresAt: date("access_token_expires_at"),
+		refreshTokenExpiresAt: date("refresh_token_expires_at"),
+		scope: text("scope"),
+		idToken: text("id_token"),
+		password: text("password"),
+		createdAt: timestamp("created_at")
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at")
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [index("account_user_id_idx").on(table.userId)]
+)
 
 export const accountRelations = relations(account, ({ one }) => ({
 	user: one(user, {
@@ -169,13 +181,6 @@ export const cefrLevel = pgEnum("cefr_level", [
 	"B2",
 	"C1",
 	"C2"
-])
-
-export const gutenbergVideoStatus = pgEnum("gutenberg_video_status", [
-	"pending",
-	"processing",
-	"completed",
-	"failed"
 ])
 
 export const language = createTable(
@@ -288,7 +293,9 @@ export const interest = createTable(
 			.$default(() => new Date()),
 		name: text("name").notNull()
 	},
-	(table) => [index("interests_name_idx").on(table.name)]
+	(table) => ({
+		nameIdx: uniqueIndex("interest_name_idx").on(table.name)
+	})
 )
 
 export const subInterest = createTable(
@@ -304,7 +311,12 @@ export const subInterest = createTable(
 		name: text("name").notNull(),
 		selected: boolean("selected").notNull().default(false)
 	},
-	(table) => [index("sub_interests_interest_id_idx").on(table.interestId)]
+	(table) => ({
+		subInterestNameIdx: uniqueIndex("sub_interest_name_idx").on(
+			table.interestId,
+			table.name
+		)
+	})
 )
 
 export const book = createTable(
@@ -341,9 +353,12 @@ export const bookSection = createTable(
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
-	(table) => [
-		index("book_section_book_position_idx").on(table.bookId, table.position)
-	]
+	(table) => ({
+		bookPositionIdx: uniqueIndex("book_section_book_position_idx").on(
+			table.bookId,
+			table.position
+		)
+	})
 )
 
 export const bookSectionTranslation = createTable(
@@ -404,20 +419,15 @@ export const bookSectionTranslationRelations = relations(
 	})
 )
 
-export const file = createTable(
-	"file",
-	{
-		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
-		createdAt: timestamp("created_at", { mode: "date" })
-			.notNull()
-			.$defaultFn(() => new Date()),
-		name: text("name").notNull(),
-		size: integer("size").notNull(),
-		type: text("type").notNull(),
-		url: text("url").notNull()
-	},
-	(table) => [index("file_name_idx").on(table.name)]
-)
+export const file = createTable("file", {
+	id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+	createdAt: timestamp("created_at", { mode: "date" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	name: text("name").notNull(),
+	size: integer("size").notNull(),
+	type: text("type").notNull()
+})
 
 export const baseVideo = createTable(
 	"base_video",
@@ -450,7 +460,6 @@ export const video = createTable(
 			.notNull()
 			.references(() => language.code),
 		cefrLevel: cefrLevel("cefr_level").notNull(),
-		status: gutenbergVideoStatus("status").notNull().default("pending"),
 		muxAssetId: text("mux_asset_id"),
 		muxPlaybackId: text("mux_playback_id"),
 		muxTranscript: text("mux_transcript"),
@@ -467,10 +476,17 @@ export const video = createTable(
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
-	(table) => [
-		index("video_base_video_idx").on(table.baseVideoId),
-		index("video_language_idx").on(table.languageId)
-	]
+	(table) => ({
+		videoVariantIdx: uniqueIndex("video_variant_idx").on(
+			table.baseVideoId,
+			table.languageId,
+			table.cefrLevel
+		),
+		muxAssetIdx: uniqueIndex("video_mux_asset_idx").on(table.muxAssetId),
+		muxPlaybackIdx: uniqueIndex("video_mux_playback_idx").on(
+			table.muxPlaybackId
+		)
+	})
 )
 
 export const baseVideoRelations = relations(baseVideo, ({ one, many }) => ({
@@ -513,10 +529,13 @@ export const videoWord = createTable(
 		word: text("word").notNull(),
 		timeOffset: integer("time_offset").notNull()
 	},
-	(table) => [
-		index("video_word_video_id_idx").on(table.videoId),
-		index("video_word_time_offset_idx").on(table.timeOffset)
-	]
+	(table) => ({
+		wordTimeIdx: uniqueIndex("video_word_occurrence_idx").on(
+			table.videoId,
+			table.word,
+			table.timeOffset
+		)
+	})
 )
 
 export const userLanguageLevel = createTable(
@@ -690,6 +709,7 @@ export const videoPlaybackEvent = createTable(
 		primaryKey({ columns: [table.id, table.eventTime] }),
 		index("video_playback_event_user_id_idx").on(table.userId),
 		index("video_playback_event_video_id_idx").on(table.videoId),
+		index("video_playback_event_session_id_idx").on(table.sessionId),
 		check(
 			"chk_playback_position",
 			sql`(
