@@ -26,6 +26,8 @@
 		"preset": "jest-expo"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.744.0",
+		"@aws-sdk/s3-request-presigner": "^3.744.0",
 		"@better-auth/expo": "^1.1.16",
 		"@expo/vector-icons": "^14.0.2",
 		"@faker-js/faker": "^9.4.0",
@@ -64,6 +66,7 @@
 		"react-native-web": "~0.19.13",
 		"react-native-webview": "13.12.5",
 		"react-server-dom-webpack": "^19.0.0-rc-6230622a1a-20240610",
+		"replicate": "^1.0.1",
 		"user-agents": "^1.1.444",
 		"zod": "^3.24.1"
 	},
