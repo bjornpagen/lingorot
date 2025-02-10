@@ -393,22 +393,65 @@ async function seed() {
 	for (const chunk of chunkify(challengePeersRows)) {
 		await db.insert(schema.challengePeer).values(chunk)
 	}
+	const dummyBookRows = [
+		{
+			gutenbergId: faker.number.int({ min: 1000, max: 9999 }),
+			title: faker.lorem.sentence(),
+			author: faker.person.fullName(),
+			languageId: languageCodes[0]
+		}
+	]
+	const insertedBooks = await db
+		.insert(schema.book)
+		.values(dummyBookRows)
+		.returning({ id: schema.book.id })
+
+	const bookSectionRows = insertedBooks.map((book) => ({
+		bookId: book.id,
+		name: faker.lorem.sentence(),
+		position: 1,
+		content: faker.lorem.paragraph()
+	}))
+	const insertedBookSections = await db
+		.insert(schema.bookSection)
+		.values(bookSectionRows)
+		.returning({ id: schema.bookSection.id })
+
+	const baseVideoRows = Array.from({ length: 100 }, () => ({
+		bookSectionId: faker.helpers.arrayElement(insertedBookSections).id
+	}))
+
+	const insertedBaseVideos = await db
+		.insert(schema.baseVideo)
+		.values(baseVideoRows)
+		.returning({ id: schema.baseVideo.id })
+
+	const bookSectionTranslationRows = Array.from({ length: 100 }, () => ({
+		sectionId: faker.helpers.arrayElement(insertedBookSections).id,
+		languageId: faker.helpers.arrayElement(languageCodes),
+		region: "US",
+		content: faker.lorem.paragraph(),
+		cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues)
+	}))
+
+	const insertedTranslations = await db
+		.insert(schema.bookSectionTranslation)
+		.values(bookSectionTranslationRows)
+		.returning({ id: schema.bookSectionTranslation.id })
+
 	const videoRows = Array.from(languageCodes).flatMap((languageId) => {
-		return Array.from({ length: 100 }, () => {
-			const baseVideoId = faker.string.uuid()
-			const bookSectionTranslationId = faker.string.uuid()
-			return {
-				baseVideoId,
-				bookSectionTranslationId,
-				languageId,
-				cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
-				muxAssetId: MUX_ASSET_ID,
-				muxPlaybackId: MUX_PLAYBACK_ID,
-				muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
-					probability: 0.5
-				})
-			}
-		})
+		return Array.from({ length: 100 }, () => ({
+			baseVideoId: faker.helpers.arrayElement(insertedBaseVideos).id,
+			bookSectionTranslationId:
+				faker.helpers.arrayElement(insertedTranslations).id,
+			languageId,
+			cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
+			muxAssetId: MUX_ASSET_ID,
+			muxPlaybackId: MUX_PLAYBACK_ID,
+			muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
+				probability: 0.5
+			})
+		}))
 	})
 	const insertedVideos = await db
 		.insert(schema.video)
