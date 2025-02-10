@@ -1,4 +1,4 @@
-import "server-only"
+//import "server-only"
 
 import { createCompletion } from "@/lib/ai/common"
 import { XMLParser } from "fast-xml-parser"
