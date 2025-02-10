@@ -57,6 +57,54 @@ async function seed() {
 		.returning({ code: schema.language.code })
 
 	const languageCodes = languageResults.map((l) => l.code)
+
+	// Add book and book section creation before video creation
+	const booksData = languageCodes.map((languageId) => ({
+		gutenbergId: faker.number.int({ min: 1, max: 100000 }),
+		title: faker.lorem.words(3),
+		author: faker.person.fullName(),
+		languageId
+	}))
+
+	const insertedBooks = await db
+		.insert(schema.book)
+		.values(booksData)
+		.returning({ id: schema.book.id })
+
+	const bookSectionsData = insertedBooks.flatMap((book) =>
+		Array.from({ length: 5 }, (_, i) => ({
+			bookId: book.id,
+			name: faker.lorem.words(2),
+			position: i,
+			content: faker.lorem.paragraphs(3)
+		}))
+	)
+
+	const insertedBookSections = await db
+		.insert(schema.bookSection)
+		.values(bookSectionsData)
+		.returning({ id: schema.bookSection.id })
+
+	// Add after book sections creation
+	const bookSectionTranslationsData = insertedBookSections.flatMap((section) =>
+		languageCodes.map((languageId) => ({
+			sectionId: section.id,
+			languageId,
+			region: "US",
+			content: faker.lorem.paragraphs(3),
+			cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues)
+		}))
+	)
+
+	await db
+		.insert(schema.bookSectionTranslation)
+		.values(bookSectionTranslationsData)
+
+	// Now the bookSections query will have data
+	const bookSections = await db
+		.select({ id: schema.bookSection.id })
+		.from(schema.bookSection)
+
 	const interestsData = [
 		{
 			name: "Entertainment",
@@ -393,32 +441,8 @@ async function seed() {
 	for (const chunk of chunkify(challengePeersRows)) {
 		await db.insert(schema.challengePeer).values(chunk)
 	}
-	const dummyBookRows = [
-		{
-			gutenbergId: faker.number.int({ min: 1000, max: 9999 }),
-			title: faker.lorem.sentence(),
-			author: faker.person.fullName(),
-			languageId: languageCodes[0]
-		}
-	]
-	const insertedBooks = await db
-		.insert(schema.book)
-		.values(dummyBookRows)
-		.returning({ id: schema.book.id })
-
-	const bookSectionRows = insertedBooks.map((book) => ({
-		bookId: book.id,
-		name: faker.lorem.sentence(),
-		position: 1,
-		content: faker.lorem.paragraph()
-	}))
-	const insertedBookSections = await db
-		.insert(schema.bookSection)
-		.values(bookSectionRows)
-		.returning({ id: schema.bookSection.id })
-
 	const baseVideoRows = Array.from({ length: 100 }, () => ({
-		bookSectionId: faker.helpers.arrayElement(insertedBookSections).id
+		bookSectionId: faker.helpers.arrayElement(bookSections).id
 	}))
 
 	const insertedBaseVideos = await db
@@ -426,29 +450,19 @@ async function seed() {
 		.values(baseVideoRows)
 		.returning({ id: schema.baseVideo.id })
 
-	const bookSectionTranslationRows = insertedBookSections.flatMap((section) => {
-		return languageCodes.map((lang) => ({
-			sectionId: section.id,
-			languageId: lang,
-			region: "US",
-			content: faker.lorem.paragraph(),
-			cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues)
-		}))
-	})
-
-	const insertedTranslations = await db
-		.insert(schema.bookSectionTranslation)
-		.values(bookSectionTranslationRows)
-		.returning({ id: schema.bookSectionTranslation.id })
-
 	const videoRows = []
 	for (const baseVideo of insertedBaseVideos) {
+		const bookSectionTranslations = await db
+			.select({ id: schema.bookSectionTranslation.id })
+			.from(schema.bookSectionTranslation)
+
 		for (const languageId of languageCodes) {
 			videoRows.push({
 				baseVideoId: baseVideo.id,
-				bookSectionTranslationId:
-					faker.helpers.arrayElement(insertedTranslations).id,
 				languageId,
+				bookSectionTranslationId: faker.helpers.arrayElement(
+					bookSectionTranslations
+				).id,
 				cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
 				muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
 					probability: 0.5
@@ -456,6 +470,7 @@ async function seed() {
 			})
 		}
 	}
+
 	const insertedVideos = await db
 		.insert(schema.video)
 		.values(videoRows)

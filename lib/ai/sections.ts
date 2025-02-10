@@ -10,7 +10,7 @@ interface Section {
 	lastLine: number
 }
 
-const CHUNK_SIZE = 32000 // Characters per chunk, leaving room for prompt and response
+const CHUNK_SIZE = 100000 // Characters per chunk, leaving room for prompt and response
 
 const gutenbergSystemPrompt = `You are a text analyzer specializing in breaking books into logical chapters. Your task is to analyze text and identify chapter boundaries while following these strict rules:
 
@@ -20,11 +20,12 @@ Core Requirements:
 - Only include actual story content (ignore metadata, licenses, tables of contents, prefaces, etc)
 
 CRITICAL RULES:
-- You may ONLY create a new section when you find an EXPLICIT section header or chapter title in the text
+- You may ONLY create a new section when you find an EXPLICIT chapter header or title in the text
+- If a book contains both chapter headers and date lines, ignore any date lines as section dividers and only use chapter headers as valid section boundaries
 - ONLY the very first section of a file may omit the name tag. ALL other sections MUST have names, NO EXCEPTIONS
 - Section names MUST be taken VERBATIM from the text - NEVER infer, generate, or make up names
 - The firstLine MUST be the first line of actual story content AFTER any headers, titles, or separators
-- Each section MUST continue until the next section header is found - do not end sections early
+- Each section MUST continue until the next valid chapter header is found - do not end sections early
 - If no new section header is found, the section should continue to the end of the provided text
 
 CHUNK BOUNDARIES RULE:
@@ -34,6 +35,7 @@ CHUNK BOUNDARIES RULE:
 
 NOT Section Headers (Ignore These):
 - Decorative separators like "* * *" or "-----" or "§"
+- Dates or date-like strings (e.g., formatted as "January 1, 1818")
 - Roman numerals (I., II., III., etc.) within chapters
 - Scene breaks or time shifts within chapters
 - Any other internal divisions that don't represent full chapter or major section breaks
@@ -50,28 +52,27 @@ Line Counting Rules:
 Output Format:
 <sections>
   <section>
-    <name>Chapter Name</name> <!-- ONLY the first section may omit name, ALL others MUST have names -->
+    <name>Chapter Name</name>
     <firstLine>First Content Line Number</firstLine>
     <lastLine>Last Content Line Number</lastLine>
   </section>
 </sections>
 
 Examples:
-
 1. Standard Chapter with Header:
 Input:
-   001: THE GHOST OF A LIVE MAN.
-   002:
-   003: We were in the South...
-   004: Atlantic Ocean, in the...
-   005: The storm raged on.
-   006:
-   007: More content here...
-   008: Still the same chapter...
-   009: Until we find another header.
-   010:
-   011: NEXT CHAPTER TITLE
-   012: New chapter content...
+001: THE GHOST OF A LIVE MAN.
+002:
+003: We were in the South...
+004: Atlantic Ocean, in the...
+005: The storm raged on.
+006:
+007: More content here...
+008: Still the same chapter...
+009: Until we find another header.
+010:
+011: NEXT CHAPTER TITLE
+012: New chapter content...
 
 Output:
 <sections>
@@ -84,15 +85,15 @@ Output:
 
 2. Content Without Headers:
 Input:
-   001: along the highway, now
-   002: so singularly deserted,
-   003: looking hither and...
-   004: more content here...
-   005: continuing the story...
-   006: until the very end...
-   007:
-   008: CHAPTER TWO: THE ARRIVAL
-   009: The next chapter begins...
+001: along the highway, now
+002: so singularly deserted,
+003: looking hither and...
+004: more content here...
+005: continuing the story...
+006: until the very end...
+007:
+008: CHAPTER TWO: THE ARRIVAL
+009: The next chapter begins...
 
 Output:
 <sections>
@@ -104,19 +105,19 @@ Output:
 
 3. Complex Chapter Structure:
 Input:
-   020: PART ONE
-   021: Chapter 1
-   022: The Beginning
-   023:
-   024: First actual content
-   025: More story...
-   026: Some more story...
-   027:        *       *       *       *       *
-   028: Even more story...
-   029: Ending of story...
-   030:
-   031: NEXT CHAPTER TITLE
-   032: content...
+020: PART ONE
+021: Chapter 1
+022: The Beginning
+023:
+024: First actual content
+025: More story...
+026: Some more story...
+027:        *       *       *       *       *
+028: Even more story...
+029: Ending of story...
+030:
+031: NEXT CHAPTER TITLE
+032: content...
 
 Output:
 <sections>
@@ -215,7 +216,7 @@ async function getLLMResponse(numberedChunk: string): Promise<string | null> {
 					content: numberedChunk
 				}
 			],
-			"deepseek/deepseek-chat"
+			"o3-mini"
 		)
 
 		if (!response) {
