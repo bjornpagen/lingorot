@@ -426,33 +426,36 @@ async function seed() {
 		.values(baseVideoRows)
 		.returning({ id: schema.baseVideo.id })
 
-	const bookSectionTranslationRows = Array.from({ length: 100 }, () => ({
-		sectionId: faker.helpers.arrayElement(insertedBookSections).id,
-		languageId: faker.helpers.arrayElement(languageCodes),
-		region: "US",
-		content: faker.lorem.paragraph(),
-		cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues)
-	}))
+	const bookSectionTranslationRows = insertedBookSections.flatMap((section) => {
+		return languageCodes.map((lang) => ({
+			sectionId: section.id,
+			languageId: lang,
+			region: "US",
+			content: faker.lorem.paragraph(),
+			cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues)
+		}))
+	})
 
 	const insertedTranslations = await db
 		.insert(schema.bookSectionTranslation)
 		.values(bookSectionTranslationRows)
 		.returning({ id: schema.bookSectionTranslation.id })
 
-	const videoRows = Array.from(languageCodes).flatMap((languageId) => {
-		return Array.from({ length: 100 }, () => ({
-			baseVideoId: faker.helpers.arrayElement(insertedBaseVideos).id,
-			bookSectionTranslationId:
-				faker.helpers.arrayElement(insertedTranslations).id,
-			languageId,
-			cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
-			muxAssetId: MUX_ASSET_ID,
-			muxPlaybackId: MUX_PLAYBACK_ID,
-			muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
-				probability: 0.5
+	const videoRows = []
+	for (const baseVideo of insertedBaseVideos) {
+		for (const languageId of languageCodes) {
+			videoRows.push({
+				baseVideoId: baseVideo.id,
+				bookSectionTranslationId:
+					faker.helpers.arrayElement(insertedTranslations).id,
+				languageId,
+				cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
+				muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
+					probability: 0.5
+				})
 			})
-		}))
-	})
+		}
+	}
 	const insertedVideos = await db
 		.insert(schema.video)
 		.values(videoRows)
@@ -633,7 +636,6 @@ async function seed() {
 
 	const table = getTableName(schema.videoPlaybackEvent)
 	const column = schema.videoPlaybackEvent.eventTime.name
-	console.log(table, column)
 	await db.execute(
 		sql`SELECT create_hypertable(${table}, ${column}, create_default_indexes => true, if_not_exists => true, migrate_data => true)`
 	)

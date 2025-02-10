@@ -15,6 +15,11 @@ async function dropTables() {
 		schema.userInterest,
 		schema.challenge,
 		schema.video,
+		schema.baseVideo,
+		schema.file,
+		schema.bookSectionTranslation,
+		schema.bookSection,
+		schema.book,
 		schema.subInterest,
 		schema.interest,
 		schema.verification,
@@ -44,7 +49,8 @@ async function dropTables() {
 		schema.playbackEventType,
 		schema.difficulty,
 		schema.expiryType,
-		schema.chatRole
+		schema.chatRole,
+		schema.cefrLevel
 	]
 	for (const enumType of enums) {
 		const exists = await db.execute(

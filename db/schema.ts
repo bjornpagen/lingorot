@@ -481,10 +481,6 @@ export const video = createTable(
 			table.baseVideoId,
 			table.languageId,
 			table.cefrLevel
-		),
-		muxAssetIdx: uniqueIndex("video_mux_asset_idx").on(table.muxAssetId),
-		muxPlaybackIdx: uniqueIndex("video_mux_playback_idx").on(
-			table.muxPlaybackId
 		)
 	})
 )
