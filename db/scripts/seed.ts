@@ -466,7 +466,9 @@ async function seed() {
 				cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
 				muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
 					probability: 0.5
-				})
+				}),
+				muxAssetId: MUX_ASSET_ID,
+				muxPlaybackId: MUX_PLAYBACK_ID
 			})
 		}
 	}
