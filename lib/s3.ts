@@ -7,7 +7,7 @@ import {
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { createId } from "@paralleldrive/cuid2"
-import { sectionFrame } from "@/db/schema"
+import { sectionFrame, file as fileTable } from "@/db/schema"
 import type { db as DbClient } from "@/db"
 
 if (
@@ -90,11 +90,20 @@ export async function uploadFrameToS3AndSave(
 ): Promise<string> {
 	const fileId = await uploadToS3(file)
 
-	await db.insert(sectionFrame).values({
-		bookSectionId,
-		fileId,
-		displayPercentage
-	})
+	return await db.transaction(async (tx) => {
+		await tx.insert(fileTable).values({
+			id: fileId,
+			name: file.name,
+			size: file.size,
+			type: file.type
+		})
 
-	return fileId
+		await tx.insert(sectionFrame).values({
+			bookSectionId,
+			fileId,
+			displayPercentage
+		})
+
+		return fileId
+	})
 }

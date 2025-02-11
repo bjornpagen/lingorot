@@ -2,8 +2,10 @@ import "dotenv/config"
 import { db } from "@/db"
 import * as schema from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { generateSceneDescriptions } from "@/lib/ai/scene-generator"
-import { generateAndSaveSectionFrames } from "@/lib/ai/image-generator"
+import {
+	generateSceneDescriptions,
+	generateAndSaveSectionFrames
+} from "@/lib/ai/scene-generator"
 import { getPresignedUrl } from "@/lib/s3"
 
 const GUTENBERG_ID = 84

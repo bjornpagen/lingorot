@@ -8,12 +8,11 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 // Create rate limited OpenAI client
-const openai = new OpenAI({
+export const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY
 })
 
-// Create rate limiter: 5 requests per second
-const limit = pLimit(5)
+export const limit = pLimit(10)
 
 export const DEFAULT_TRANSLATION_MODEL = "gpt-4o"
 

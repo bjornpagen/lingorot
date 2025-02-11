@@ -1,20 +1,21 @@
 import { z } from "zod"
-import OpenAI from "openai"
 import { zodResponseFormat } from "openai/helpers/zod"
 import { DEFAULT_TRANSLATION_MODEL } from "@/lib/ai/common"
+import { uploadFrameToS3AndSave } from "@/lib/s3"
+import { db } from "@/db"
+import { generateImage, type GeneratedImage } from "@/lib/replicate"
+import { openai, limit } from "@/lib/ai/common"
 
-export type SentenceData = {
+type SentenceData = {
 	text: string
 	displayPercentage: number
 }
 
-export type SceneDescription = {
+type SceneDescription = {
 	text: string
 	description: string
 	displayPercentage: number
 }
-
-const openai = new OpenAI()
 
 const SceneResponseSchema = z.object({
 	description: z.string()
@@ -127,21 +128,48 @@ export async function generateSceneDescriptions(
 	const sentences = extractSentenceData(text)
 	console.log(`Found ${sentences.length} sentences`)
 
-	const batchSize = 3
-	const results: SceneDescription[] = []
-
-	for (let i = 0; i < sentences.length; i += batchSize) {
-		console.log(
-			`Processing batch ${i / batchSize + 1}/${Math.ceil(sentences.length / batchSize)}`
+	const results = await Promise.all(
+		sentences.map((sentence) =>
+			limit(() => generateSceneDescription(sentence, text))
 		)
-		const batch = sentences.slice(i, i + batchSize)
-		const batchPromises = batch.map((sentence) =>
-			generateSceneDescription(sentence, text)
-		)
-		const batchResults = await Promise.all(batchPromises)
-		results.push(...batchResults)
-		console.log(`Completed batch, total scenes so far: ${results.length}`)
-	}
+	)
 
 	return results
+}
+
+export async function generateImagesFromScenes(
+	scenes: SceneDescription[],
+	sectionId: string
+): Promise<GeneratedImage[]> {
+	console.log(`Starting image generation for ${scenes.length} scenes`)
+	return Promise.all(
+		scenes.map((scene, index) =>
+			generateImage(scene.description, sectionId, index)
+		)
+	)
+}
+
+export async function generateAndSaveSectionFrames(
+	scenes: SceneDescription[],
+	bookSectionId: string
+): Promise<void> {
+	console.log(`Generating images for ${scenes.length} scenes`)
+	const images = await generateImagesFromScenes(scenes, bookSectionId)
+
+	await Promise.all(
+		images.map(async (img, index) => {
+			const scene = scenes[index]
+			const imageFileName = `frame-${index.toString().padStart(3, "0")}.webp`
+			const imageFile = new File([img.imageData], imageFileName, {
+				type: "image/webp"
+			})
+
+			await uploadFrameToS3AndSave(
+				db,
+				imageFile,
+				bookSectionId,
+				scene.displayPercentage
+			)
+		})
+	)
 }
