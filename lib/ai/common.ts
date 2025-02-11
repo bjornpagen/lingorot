@@ -3,13 +3,13 @@
 import OpenAI from "openai"
 import pLimit from "p-limit"
 
-if (!process.env.OPENAI_KEY) {
-	throw new Error("OPENAI_KEY is not set")
+if (!process.env.OPENAI_API_KEY) {
+	throw new Error("OPENAI_API_KEY is not set")
 }
 
 // Create rate limited OpenAI client
 const openai = new OpenAI({
-	apiKey: process.env.OPENAI_KEY
+	apiKey: process.env.OPENAI_API_KEY
 })
 
 // Create rate limiter: 5 requests per second
