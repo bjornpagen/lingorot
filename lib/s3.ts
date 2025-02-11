@@ -7,6 +7,8 @@ import {
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { createId } from "@paralleldrive/cuid2"
+import { sectionFrame } from "@/db/schema"
+import type { db as DbClient } from "@/db"
 
 if (
 	!process.env.AWS_REGION ||
@@ -70,4 +72,29 @@ export async function getPresignedUrl(
 	})
 
 	return getSignedUrl(s3Client, command, { expiresIn })
+}
+
+/**
+ * Uploads a file to S3 and saves its reference in the database
+ * @param db Database client instance
+ * @param file File to upload to S3
+ * @param bookSectionId ID of the book section this file belongs to
+ * @param displayPercentage Position of this frame within the section (0-1)
+ * @returns Promise containing the fileId of the uploaded file
+ */
+export async function uploadFrameToS3AndSave(
+	db: typeof DbClient,
+	file: File,
+	bookSectionId: string,
+	displayPercentage: number
+): Promise<string> {
+	const fileId = await uploadToS3(file)
+
+	await db.insert(sectionFrame).values({
+		bookSectionId,
+		fileId,
+		displayPercentage
+	})
+
+	return fileId
 }

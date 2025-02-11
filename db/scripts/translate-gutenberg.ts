@@ -5,8 +5,7 @@ import {
 } from "@/lib/ai/translation"
 
 const GUTENBERG_ID = 84 // Frankenstein by Mary Shelley
-const TARGET_LANGUAGE = "Finnish"
-const TARGET_REGION = "Finland"
+const TARGET_LANGUAGE = "es" as const
 const CEFR_LEVEL = "A1" as const
 
 async function translateGutenberg() {
@@ -15,11 +14,11 @@ async function translateGutenberg() {
 	)
 
 	try {
-		const bookId = await translateGutenbergBook(GUTENBERG_ID, {
-			targetLanguage: TARGET_LANGUAGE,
-			targetRegion: TARGET_REGION,
-			cefrLevel: CEFR_LEVEL
-		})
+		const bookId = await translateGutenbergBook(
+			GUTENBERG_ID,
+			TARGET_LANGUAGE,
+			CEFR_LEVEL
+		)
 
 		console.log("\nTranslation completed successfully!")
 

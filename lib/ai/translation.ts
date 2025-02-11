@@ -1,12 +1,14 @@
 import { db } from "@/db"
 import * as schema from "@/db/schema"
-import { eq, sql } from "drizzle-orm"
+import { eq, sql, and } from "drizzle-orm"
 import { transcribeText } from "@/lib/ai/transcribe"
 
+type CEFRLevel = (typeof schema.cefrLevel.enumValues)[number]
+type LanguageCode = (typeof schema.languageCode.enumValues)[number]
+
 export type TranslationOptions = {
-	targetLanguage: string
-	targetRegion: string
-	cefrLevel: "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+	targetLanguage: LanguageCode
+	cefrLevel: CEFRLevel
 }
 
 export async function getFormattedTranslation(bookId: string) {
@@ -39,7 +41,8 @@ export async function getFormattedTranslation(bookId: string) {
 
 export async function translateGutenbergBook(
 	gutenbergId: number,
-	options: TranslationOptions
+	targetLanguage: LanguageCode,
+	cefrLevel: CEFRLevel
 ) {
 	const book = await db
 		.select({
@@ -63,7 +66,13 @@ export async function translateGutenbergBook(
 		const existingTranslation = await db
 			.select()
 			.from(schema.bookSectionTranslation)
-			.where(eq(schema.bookSectionTranslation.sectionId, section.id))
+			.where(
+				and(
+					eq(schema.bookSectionTranslation.sectionId, section.id),
+					eq(schema.bookSectionTranslation.languageId, targetLanguage),
+					eq(schema.bookSectionTranslation.cefrLevel, cefrLevel)
+				)
+			)
 			.then((results) => results[0])
 
 		if (existingTranslation) {
@@ -72,9 +81,8 @@ export async function translateGutenbergBook(
 
 		const translatedContent = await transcribeText(
 			section.content,
-			options.targetLanguage,
-			options.targetRegion,
-			options.cefrLevel
+			targetLanguage,
+			cefrLevel
 		)
 
 		if (!translatedContent) {
@@ -83,10 +91,9 @@ export async function translateGutenbergBook(
 
 		await db.insert(schema.bookSectionTranslation).values({
 			sectionId: section.id,
-			languageId: "fi",
-			region: options.targetRegion,
+			languageId: targetLanguage,
 			content: translatedContent,
-			cefrLevel: options.cefrLevel
+			cefrLevel
 		})
 	}
 

@@ -3,14 +3,10 @@ import { db } from "@/db"
 import * as schema from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { generateSceneDescriptions } from "@/lib/ai/scene-generator"
-import {
-	generateImagesFromScenes,
-	generateVideo
-} from "@/lib/ai/image-generator"
-import { writeFile } from "node:fs/promises"
-import { join } from "node:path"
+import { generateAndSaveSectionFrames } from "@/lib/ai/image-generator"
+import { getPresignedUrl } from "@/lib/s3"
 
-const GUTENBERG_ID = 84 // Frankenstein
+const GUTENBERG_ID = 84
 
 async function testSceneGenerator() {
 	console.log(`Testing scene generation for Gutenberg book ${GUTENBERG_ID}...`)
@@ -50,50 +46,27 @@ async function testSceneGenerator() {
 			console.log(`Description: ${scene.description}`)
 		}
 
-		console.log("\nGenerating images from scenes...")
-		const images = await generateImagesFromScenes(scenes, section.id)
+		console.log("\nGenerating and saving section frames...")
+		await generateAndSaveSectionFrames(scenes, section.id, section.content)
 
-		if (!images.length) {
-			throw new Error("No images were generated")
-		}
+		const frames = await db
+			.select({
+				id: schema.sectionFrame.id,
+				fileId: schema.sectionFrame.fileId,
+				displayPercentage: schema.sectionFrame.displayPercentage
+			})
+			.from(schema.sectionFrame)
+			.where(eq(schema.sectionFrame.bookSectionId, section.id))
+			.orderBy(schema.sectionFrame.displayPercentage)
 
-		const outputDir = join(process.cwd(), "generated-images")
-		console.log(`\nSaving images to ${outputDir}...`)
-
-		for (const [index, image] of images.entries()) {
-			const filename = join(
-				outputDir,
-				`section_${image.sectionId}_pos_${image.position}.webp`
+		console.log(`\nGenerated ${frames.length} frames:`)
+		for (const frame of frames) {
+			const signedUrl = await getPresignedUrl(frame.fileId)
+			console.log(
+				`Frame at ${(frame.displayPercentage * 100).toFixed(1)}%`,
+				`\n  ID: ${frame.id}`,
+				`\n  URL: ${signedUrl}`
 			)
-			try {
-				await writeFile(filename, image.imageData)
-				console.log(`✓ Saved image ${index + 1} to ${filename}`)
-				console.log(
-					`  Section: ${image.sectionId}, Position: ${image.position}`
-				)
-				console.log(`  Prompt: ${image.prompt}\n`)
-			} catch (error) {
-				console.error(`Failed to save image ${index + 1}:`, error)
-				throw error
-			}
-		}
-
-		console.log("\nGenerating video from scenes...")
-		const { videoBuffer } = await generateVideo(scenes, section.id)
-
-		if (!videoBuffer?.length) {
-			throw new Error("Generated video buffer is empty")
-		}
-
-		const videoPath = join(outputDir, "output.mp4")
-		console.log(`\nSaving video to ${videoPath}...`)
-
-		try {
-			await writeFile(videoPath, videoBuffer)
-			console.log(`✓ Successfully saved video (${videoBuffer.length} bytes)`)
-		} catch (error) {
-			console.error("Failed to save video file:", error)
-			throw error
 		}
 	} catch (error) {
 		console.error("\n❌ Error in scene generation process:", error)

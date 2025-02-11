@@ -1,7 +1,7 @@
 //import "server-only"
 import { createCompletion } from "@/lib/ai/common"
-
-type CEFRLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+import type * as schema from "@/db/schema"
+type CEFRLevel = (typeof schema.cefrLevel.enumValues)[number]
 
 interface CEFRDetail {
 	name: string
@@ -114,18 +114,16 @@ function formatCEFRGuidelines(guidelines: string[]): string {
  * Builds the system prompt for the AI model based on language level.
  *
  * @param targetLanguage - The target language for transcription.
- * @param region - The regional variant of the target language.
  * @param cefrLevel - The CEFR level for language complexity.
  * @returns A formatted system prompt string.
  */
 export function buildLanguageTranscriptionPrompt(
 	targetLanguage: string,
-	region: string,
 	cefrLevel: CEFRLevel
 ): string {
 	const levelInfo = cefrDetails[cefrLevel]
 
-	return `You are a transcriber who converts text into clear, modern ${targetLanguage} from ${region} while:
+	return `You are a transcriber who converts text into clear, modern ${targetLanguage} while:
 - Maintaining all key details and nuances from the original text
 - Using natural, contemporary ${targetLanguage} phrasing
 - Following vocabulary and grammar structures appropriate for ${cefrLevel} level (${levelInfo.name}):
@@ -145,19 +143,16 @@ Format your response using a single pair of XML tags:
  *
  * @param text - The text to be transcribed.
  * @param targetLanguage - The target language for transcription.
- * @param region - The regional variant of the target language.
  * @param cefrLevel - The CEFR level for language complexity.
  * @returns The transcribed text or null if unsuccessful.
  */
 export async function transcribeText(
 	text: string,
 	targetLanguage: string,
-	region: string,
 	cefrLevel: CEFRLevel
 ): Promise<string | null> {
 	const systemPrompt = buildLanguageTranscriptionPrompt(
 		targetLanguage,
-		region,
 		cefrLevel
 	)
 	const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim())

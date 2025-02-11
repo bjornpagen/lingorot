@@ -9,6 +9,8 @@ import UserAgent from "user-agents"
 import ISO6391 from "iso-639-1"
 import { eq } from "drizzle-orm"
 
+type LanguageCode = (typeof schema.languageCode.enumValues)[number]
+
 /**
  * Fetches raw text content from Project Gutenberg using Node's built-in fetch
  * with Safari-like headers to avoid blocking.
@@ -146,7 +148,13 @@ function parseGutenbergHeader(text: string) {
 	const title = titleMatch[1].trim()
 	const author = authorMatch[1].trim()
 	const languageName = languageMatch[1].trim()
-	const language = ISO6391.getCode(languageName)
+	const isoCode = ISO6391.getCode(languageName)
+
+	if (!schema.languageCode.enumValues.includes(isoCode as LanguageCode)) {
+		throw new Error(`Unsupported language: ${languageName}`)
+	}
+
+	const language = isoCode as LanguageCode
 
 	return {
 		title,

@@ -19,6 +19,15 @@ import { relations } from "drizzle-orm"
 
 export const createTable = pgTableCreator((name) => `lingorot_${name}`)
 
+export const languageCode = pgEnum("language_code", [
+	"ar", // Arabic
+	"zh", // Chinese
+	"en", // English
+	"fr", // French
+	"ru", // Russian
+	"es" // Spanish
+])
+
 export const user = createTable(
 	"user",
 	{
@@ -39,7 +48,7 @@ export const user = createTable(
 		wordsLearned: integer("words_learned").notNull().default(0),
 		minutesWatched: integer("minutes_watched").notNull().default(0),
 		daysStreak: integer("days_streak").notNull().default(0),
-		currentLanguageId: char("current_language_id", { length: 2 })
+		currentLanguageId: languageCode("current_language_id")
 			.references(() => language.code)
 			.notNull()
 			.default("en")
@@ -186,7 +195,7 @@ export const cefrLevel = pgEnum("cefr_level", [
 export const language = createTable(
 	"language",
 	{
-		code: char("code", { length: 2 }).primaryKey().notNull(),
+		code: languageCode("code").primaryKey().notNull(),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
 			.$default(() => new Date()),
@@ -293,9 +302,7 @@ export const interest = createTable(
 			.$default(() => new Date()),
 		name: text("name").notNull()
 	},
-	(table) => ({
-		nameIdx: uniqueIndex("interest_name_idx").on(table.name)
-	})
+	(table) => [uniqueIndex("interest_name_idx").on(table.name)]
 )
 
 export const subInterest = createTable(
@@ -311,12 +318,9 @@ export const subInterest = createTable(
 		name: text("name").notNull(),
 		selected: boolean("selected").notNull().default(false)
 	},
-	(table) => ({
-		subInterestNameIdx: uniqueIndex("sub_interest_name_idx").on(
-			table.interestId,
-			table.name
-		)
-	})
+	(table) => [
+		uniqueIndex("sub_interest_name_idx").on(table.interestId, table.name)
+	]
 )
 
 export const book = createTable(
@@ -326,7 +330,7 @@ export const book = createTable(
 		gutenbergId: integer("gutenberg_id").unique().notNull(),
 		title: text("title").notNull(),
 		author: text("author").notNull(),
-		languageId: char("language_id", { length: 2 })
+		languageId: languageCode("language_id")
 			.notNull()
 			.references(() => language.code),
 		createdAt: timestamp("created_at", { mode: "date" })
@@ -353,39 +357,38 @@ export const bookSection = createTable(
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
-	(table) => ({
-		bookPositionIdx: uniqueIndex("book_section_book_position_idx").on(
+	(table) => [
+		uniqueIndex("book_section_book_position_idx").on(
 			table.bookId,
 			table.position
 		)
-	})
+	]
 )
 
 export const bookSectionTranslation = createTable(
 	"book_section_translation",
 	{
-		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
 		sectionId: char("section_id", { length: 24 })
 			.notNull()
 			.references(() => bookSection.id, { onDelete: "cascade" }),
-		languageId: char("language_id", { length: 2 })
+		languageId: languageCode("language_id")
 			.notNull()
 			.references(() => language.code),
-		region: text("region").notNull(),
 		content: text("content").notNull(),
 		cefrLevel: cefrLevel("cefr_level").notNull(),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
-	(table) => [
-		uniqueIndex("unique_section_lang_region_idx").on(
+	(table) => ({
+		pk: primaryKey({
+			columns: [table.sectionId, table.languageId, table.cefrLevel]
+		}),
+		sectionLanguageIdx: index("section_language_idx").on(
 			table.sectionId,
-			table.languageId,
-			table.region
-		),
-		index("section_language_idx").on(table.sectionId, table.languageId)
-	]
+			table.languageId
+		)
+	})
 )
 
 export const bookRelations = relations(book, ({ one, many }) => ({
@@ -401,8 +404,7 @@ export const bookSectionRelations = relations(bookSection, ({ one, many }) => ({
 		fields: [bookSection.bookId],
 		references: [book.id]
 	}),
-	translations: many(bookSectionTranslation),
-	baseVideos: many(baseVideo)
+	translations: many(bookSectionTranslation)
 }))
 
 export const bookSectionTranslationRelations = relations(
@@ -429,82 +431,42 @@ export const file = createTable("file", {
 	type: text("type").notNull()
 })
 
-export const baseVideo = createTable(
-	"base_video",
+export const video = createTable(
+	"video",
 	{
 		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
 		bookSectionId: char("book_section_id", { length: 24 })
 			.notNull()
 			.references(() => bookSection.id),
-		fileId: char("file_id", { length: 24 }).references(() => file.id),
-		createdAt: timestamp("created_at", { mode: "date" })
-			.notNull()
-			.$defaultFn(() => new Date())
-	},
-	(table) => [index("base_video_book_section_idx").on(table.bookSectionId)]
-)
-
-export const video = createTable(
-	"video",
-	{
-		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
-		baseVideoId: char("base_video_id", { length: 24 })
-			.notNull()
-			.references(() => baseVideo.id),
-		bookSectionTranslationId: char("book_section_translation_id", {
-			length: 24
-		})
-			.notNull()
-			.references(() => bookSectionTranslation.id, { onDelete: "cascade" }),
-		languageId: char("language_id", { length: 2 })
+		languageId: languageCode("language_id")
 			.notNull()
 			.references(() => language.code),
 		cefrLevel: cefrLevel("cefr_level").notNull(),
 		muxAssetId: text("mux_asset_id"),
 		muxPlaybackId: text("mux_playback_id"),
 		muxTranscript: text("mux_transcript"),
-		subtitleGeneratedAt: timestamp("subtitle_generated_at", {
-			mode: "date"
-		}),
-		thumbnail: text("thumbnail").generatedAlwaysAs(
-			sql`CASE WHEN mux_playback_id IS NOT NULL THEN 'https://image.mux.com/' || mux_playback_id || '/thumbnail.png' ELSE NULL END`
-		),
-		url: text("url").generatedAlwaysAs(
-			sql`CASE WHEN mux_playback_id IS NOT NULL THEN 'https://stream.mux.com/' || mux_playback_id || '.m3u8?default_subtitles_lang=' || language_id ELSE NULL END`
-		),
+		subtitleGeneratedAt: timestamp("subtitle_generated_at", { mode: "date" }),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
-	(table) => ({
-		videoVariantIdx: uniqueIndex("video_variant_idx").on(
-			table.baseVideoId,
+	(table) => [
+		uniqueIndex("video_variant_idx").on(
+			table.bookSectionId,
 			table.languageId,
 			table.cefrLevel
 		)
-	})
+	]
 )
 
-export const baseVideoRelations = relations(baseVideo, ({ one, many }) => ({
-	bookSection: one(bookSection, {
-		fields: [baseVideo.bookSectionId],
-		references: [bookSection.id]
-	}),
-	file: one(file, {
-		fields: [baseVideo.fileId],
-		references: [file.id]
-	}),
-	videos: many(video)
-}))
-
 export const videoRelations = relations(video, ({ one }) => ({
-	baseVideo: one(baseVideo, {
-		fields: [video.baseVideoId],
-		references: [baseVideo.id]
-	}),
 	translation: one(bookSectionTranslation, {
-		fields: [video.bookSectionTranslationId],
-		references: [bookSectionTranslation.id]
+		fields: [video.bookSectionId, video.languageId, video.cefrLevel],
+		references: [
+			bookSectionTranslation.sectionId,
+			bookSectionTranslation.languageId,
+			bookSectionTranslation.cefrLevel
+		]
 	}),
 	language: one(language, {
 		fields: [video.languageId],
@@ -525,13 +487,13 @@ export const videoWord = createTable(
 		word: text("word").notNull(),
 		timeOffset: integer("time_offset").notNull()
 	},
-	(table) => ({
-		wordTimeIdx: uniqueIndex("video_word_occurrence_idx").on(
+	(table) => [
+		uniqueIndex("video_word_occurrence_idx").on(
 			table.videoId,
 			table.word,
 			table.timeOffset
 		)
-	})
+	]
 )
 
 export const userLanguageLevel = createTable(
@@ -543,13 +505,15 @@ export const userLanguageLevel = createTable(
 		userId: char("user_id", { length: 24 })
 			.notNull()
 			.references(() => user.id),
-		languageId: char("language_id", { length: 2 })
+		languageId: languageCode("language_id")
 			.notNull()
 			.references(() => language.code),
 		stars: integer("stars").notNull().default(0),
 		level: integer("level")
 			.notNull()
-			.generatedAlwaysAs(sql`FLOOR(SQRT(stars / 10.0) + 1)::integer`)
+			.generatedAlwaysAs(
+				sql`CASE WHEN stars < 1 THEN 1 ELSE FLOOR(POWER(stars::float8 / 28, 0.808)) + 1 END::integer`
+			)
 	},
 	(table) => [
 		index("user_language_levels_user_id_idx").on(table.userId),
@@ -805,6 +769,31 @@ export const videoPlaybackEvent = createTable(
 			sql`(
 				event_type = 'sourceChange' OR old_source IS NULL
 			)`
+		)
+	]
+)
+
+export const sectionFrame = createTable(
+	"section_frame",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		bookSectionId: char("book_section_id", { length: 24 })
+			.notNull()
+			.references(() => bookSection.id),
+		fileId: char("file_id", { length: 24 })
+			.notNull()
+			.references(() => file.id),
+		displayPercentage: real("display_percentage").notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		index("section_frame_section_idx").on(table.bookSectionId),
+		index("section_frame_file_idx").on(table.fileId),
+		check(
+			"display_percentage_range",
+			sql`(${table.displayPercentage} >= 0 AND ${table.displayPercentage} <= 1)`
 		)
 	]
 )
