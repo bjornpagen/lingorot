@@ -42,12 +42,15 @@ async function testSceneGenerator() {
 		console.log("\nGenerated Scene Descriptions:")
 		for (const [index, scene] of scenes.entries()) {
 			console.log(`\nScene ${index + 1}:`)
-			console.log(`Original Paragraph: "${scene.paragraph}"`)
+			console.log(`Original Text: "${scene.text}"`)
 			console.log(`Description: ${scene.description}`)
+			console.log(
+				`Display Percentage: ${(scene.displayPercentage * 100).toFixed(1)}%`
+			)
 		}
 
 		console.log("\nGenerating and saving section frames...")
-		await generateAndSaveSectionFrames(scenes, section.id, section.content)
+		await generateAndSaveSectionFrames(scenes, section.id)
 
 		const frames = await db
 			.select({

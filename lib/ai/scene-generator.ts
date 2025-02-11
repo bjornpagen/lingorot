@@ -3,9 +3,15 @@ import OpenAI from "openai"
 import { zodResponseFormat } from "openai/helpers/zod"
 import { DEFAULT_TRANSLATION_MODEL } from "@/lib/ai/common"
 
+export type SentenceData = {
+	text: string
+	displayPercentage: number
+}
+
 export type SceneDescription = {
-	paragraph: string
+	text: string
 	description: string
+	displayPercentage: number
 }
 
 const openai = new OpenAI()
@@ -16,7 +22,7 @@ const SceneResponseSchema = z.object({
 
 const systemPrompt = `You are a visual description expert who creates vivid, cinematic scene descriptions in a realistic art style. Your descriptions will be used to generate photorealistic imagery.
 
-For each paragraph, create a highly detailed scene description as a single paragraph that includes:
+For each sentence, create a highly detailed scene description that includes:
 
 REQUIRED ELEMENTS:
 1. Physical Setting
@@ -53,53 +59,34 @@ Format your response as a JSON object:
   "description": "Your detailed visual description here"
 }`
 
-function splitIntoSentences(text: string): string[] {
-	return text
-		.replace(/([.!?])\s+/g, "$1|")
-		.split("|")
-		.map((s) => s.trim())
-		.filter(Boolean)
-}
+export function extractSentenceData(content: string): SentenceData[] {
+	const regex = /[^.!?]+[.!?]+/g
+	const matches = Array.from(content.matchAll(regex))
+	const totalLength = content.length
 
-function splitIntoParagraphs(text: string): string[] {
-	return text
-		.split(/\n\s*\n/)
-		.map((p) => p.trim())
-		.filter(Boolean)
-}
-
-function groupSentencesInParagraph(paragraph: string): string[] {
-	const sentences = splitIntoSentences(paragraph)
-	const groups: string[] = []
-
-	for (let i = 0; i < sentences.length; i += 2) {
-		if (i + 1 < sentences.length) {
-			groups.push(`${sentences[i]} ${sentences[i + 1]}`)
-		} else {
-			groups.push(sentences[i])
-		}
-	}
-
-	return groups
+	return matches.map((match) => ({
+		text: match[0].trim(),
+		displayPercentage: (match.index || 0) / totalLength
+	}))
 }
 
 export async function generateSceneDescription(
-	paragraph: string,
+	sentenceData: SentenceData,
 	sectionContext: string
 ): Promise<SceneDescription> {
 	console.log(
-		"Generating scene description for paragraph:",
-		`${paragraph.slice(0, 100)}...`
+		"Generating scene description for sentence:",
+		`${sentenceData.text.slice(0, 100)}...`
 	)
 
 	const prompt = `CONTEXT:
 ${sectionContext}
 
-PARAGRAPH TO VISUALIZE:
-${paragraph}
+SENTENCE TO VISUALIZE:
+${sentenceData.text}
 
 TASK:
-Generate a single, highly detailed scene description for this specific paragraph that could be used to create a visual image. Consider the broader context but focus on this particular moment in the narrative.
+Generate a single, highly detailed scene description for this specific sentence that could be used to create a visual image. Consider the broader context but focus on this particular moment in the narrative.
 
 Remember to include all required elements:
 1. Physical Setting
@@ -127,34 +114,29 @@ Ensure your response is a single paragraph.`
 	const description = completion.choices[0].message.parsed?.description ?? ""
 
 	return {
-		paragraph,
-		description
+		text: sentenceData.text,
+		description,
+		displayPercentage: sentenceData.displayPercentage
 	}
 }
 
 export async function generateSceneDescriptions(
 	text: string
 ): Promise<SceneDescription[]> {
-	console.log("Processing text into sentence groups...")
-	const paragraphs = splitIntoParagraphs(text)
-	const sentenceGroups: string[] = []
-
-	for (const paragraph of paragraphs) {
-		sentenceGroups.push(...groupSentencesInParagraph(paragraph))
-	}
-
-	console.log(`Found ${sentenceGroups.length} sentence groups`)
+	console.log("Processing text into sentences...")
+	const sentences = extractSentenceData(text)
+	console.log(`Found ${sentences.length} sentences`)
 
 	const batchSize = 3
 	const results: SceneDescription[] = []
 
-	for (let i = 0; i < sentenceGroups.length; i += batchSize) {
+	for (let i = 0; i < sentences.length; i += batchSize) {
 		console.log(
-			`Processing batch ${i / batchSize + 1}/${Math.ceil(sentenceGroups.length / batchSize)}`
+			`Processing batch ${i / batchSize + 1}/${Math.ceil(sentences.length / batchSize)}`
 		)
-		const batch = sentenceGroups.slice(i, i + batchSize)
-		const batchPromises = batch.map((sentences) =>
-			generateSceneDescription(sentences, text)
+		const batch = sentences.slice(i, i + batchSize)
+		const batchPromises = batch.map((sentence) =>
+			generateSceneDescription(sentence, text)
 		)
 		const batchResults = await Promise.all(batchPromises)
 		results.push(...batchResults)
