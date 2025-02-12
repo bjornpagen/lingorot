@@ -53,7 +53,10 @@ export const user = createTable(
 			.notNull()
 			.default("en")
 	},
-	(table) => [uniqueIndex("user_email_idx").on(table.email)]
+	(table) => [
+		uniqueIndex("user_email_idx").on(table.email),
+		check("user_id_length", sql`length(${table.id}) = 24`)
+	]
 )
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -80,7 +83,10 @@ export const session = createTable(
 			.$defaultFn(() => new Date())
 			.$onUpdateFn(() => new Date())
 	},
-	(table) => [index("session_user_id_idx").on(table.userId)]
+	(table) => [
+		index("session_user_id_idx").on(table.userId),
+		check("session_id_length", sql`length(${table.id}) = 24`)
+	]
 )
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -114,7 +120,10 @@ export const account = createTable(
 			.$defaultFn(() => new Date())
 			.$onUpdateFn(() => new Date())
 	},
-	(table) => [index("account_user_id_idx").on(table.userId)]
+	(table) => [
+		index("account_user_id_idx").on(table.userId),
+		check("account_id_length", sql`length(${table.id}) = 24`)
+	]
 )
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -124,19 +133,23 @@ export const accountRelations = relations(account, ({ one }) => ({
 	})
 }))
 
-export const verification = createTable("verification", {
-	id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
-	identifier: text("identifier").notNull(),
-	value: text("value").notNull(),
-	expiresAt: date("expires_at").notNull(),
-	createdAt: timestamp("created_at")
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: timestamp("updated_at")
-		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date())
-})
+export const verification = createTable(
+	"verification",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		identifier: text("identifier").notNull(),
+		value: text("value").notNull(),
+		expiresAt: date("expires_at").notNull(),
+		createdAt: timestamp("created_at")
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at")
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [check("verification_id_length", sql`length(${table.id}) = 24`)]
+)
 
 // END OF BETTERAUTH TABLES
 
@@ -224,6 +237,7 @@ export const challenge = createTable(
 	},
 	(table) => [
 		index("challenges_title_idx").on(table.title),
+		check("challenge_id_length", sql`length(${table.id}) = 24`),
 		check(
 			"check_expiry_constraint",
 			sql`(
@@ -252,7 +266,8 @@ export const userChallenge = createTable(
 	},
 	(table) => [
 		index("user_challenges_user_id_idx").on(table.userId),
-		index("user_challenges_challenge_id_idx").on(table.challengeId)
+		index("user_challenges_challenge_id_idx").on(table.challengeId),
+		check("user_challenge_id_length", sql`length(${table.id}) = 24`)
 	]
 )
 
@@ -271,7 +286,10 @@ export const userChallengeWord = createTable(
 		dateLastSeen: timestamp("date_last_seen", { mode: "date" })
 	},
 	(table) => [
-		index("user_challenge_word_user_challenge_id_idx").on(table.userChallengeId)
+		index("user_challenge_word_user_challenge_id_idx").on(
+			table.userChallengeId
+		),
+		check("user_challenge_word_id_length", sql`length(${table.id}) = 24`)
 	]
 )
 
@@ -290,7 +308,10 @@ export const challengePeer = createTable(
 		progress: integer("progress").notNull(),
 		avatarUrl: text("avatar_url").notNull()
 	},
-	(table) => [index("challenge_peers_challenge_id_idx").on(table.challengeId)]
+	(table) => [
+		index("challenge_peers_challenge_id_idx").on(table.challengeId),
+		check("challenge_peer_id_length", sql`length(${table.id}) = 24`)
+	]
 )
 
 export const interest = createTable(
@@ -302,7 +323,10 @@ export const interest = createTable(
 			.$default(() => new Date()),
 		name: text("name").notNull()
 	},
-	(table) => [uniqueIndex("interest_name_idx").on(table.name)]
+	(table) => [
+		uniqueIndex("interest_name_idx").on(table.name),
+		check("interest_id_length", sql`length(${table.id}) = 24`)
+	]
 )
 
 export const subInterest = createTable(
@@ -319,7 +343,8 @@ export const subInterest = createTable(
 		selected: boolean("selected").notNull().default(false)
 	},
 	(table) => [
-		uniqueIndex("sub_interest_name_idx").on(table.interestId, table.name)
+		uniqueIndex("sub_interest_name_idx").on(table.interestId, table.name),
+		check("sub_interest_id_length", sql`length(${table.id}) = 24`)
 	]
 )
 
@@ -339,7 +364,8 @@ export const book = createTable(
 	},
 	(table) => [
 		index("book_gutenberg_id_idx").on(table.gutenbergId),
-		index("book_language_id_idx").on(table.languageId)
+		index("book_language_id_idx").on(table.languageId),
+		check("book_id_length", sql`length(${table.id}) = 24`)
 	]
 )
 
@@ -361,7 +387,8 @@ export const bookSection = createTable(
 		uniqueIndex("book_section_book_position_idx").on(
 			table.bookId,
 			table.position
-		)
+		),
+		check("book_section_id_length", sql`length(${table.id}) = 24`)
 	]
 )
 
@@ -421,15 +448,19 @@ export const bookSectionTranslationRelations = relations(
 	})
 )
 
-export const file = createTable("file", {
-	id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
-	createdAt: timestamp("created_at", { mode: "date" })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	name: text("name").notNull(),
-	size: integer("size").notNull(),
-	type: text("type").notNull()
-})
+export const file = createTable(
+	"file",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		name: text("name").notNull(),
+		size: integer("size").notNull(),
+		type: text("type").notNull()
+	},
+	(table) => [check("file_id_length", sql`length(${table.id}) = 24`)]
+)
 
 export const video = createTable(
 	"video",
@@ -455,7 +486,8 @@ export const video = createTable(
 			table.bookSectionId,
 			table.languageId,
 			table.cefrLevel
-		)
+		),
+		check("video_id_length", sql`length(${table.id}) = 24`)
 	]
 )
 
@@ -492,7 +524,8 @@ export const videoWord = createTable(
 			table.videoId,
 			table.word,
 			table.timeOffset
-		)
+		),
+		check("video_word_id_length", sql`length(${table.id}) = 24`)
 	]
 )
 
@@ -670,6 +703,7 @@ export const videoPlaybackEvent = createTable(
 		index("video_playback_event_user_id_idx").on(table.userId),
 		index("video_playback_event_video_id_idx").on(table.videoId),
 		index("video_playback_event_session_id_idx").on(table.sessionId),
+		check("video_playback_event_id_length", sql`length(${table.id}) = 24`),
 		check(
 			"chk_playback_position",
 			sql`(
@@ -791,6 +825,7 @@ export const sectionFrame = createTable(
 	(table) => [
 		index("section_frame_section_idx").on(table.bookSectionId),
 		index("section_frame_file_idx").on(table.fileId),
+		check("section_frame_id_length", sql`length(${table.id}) = 24`),
 		check(
 			"display_percentage_range",
 			sql`(${table.displayPercentage} >= 0 AND ${table.displayPercentage} <= 1)`
@@ -809,12 +844,18 @@ export const sectionAudio = createTable(
 			.notNull()
 			.references(() => file.id),
 		durationMs: integer("duration_ms").notNull(),
+		position: integer("position").notNull(),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
 	(table) => [
 		index("section_audio_section_idx").on(table.bookSectionId),
-		index("section_audio_file_idx").on(table.fileId)
+		index("section_audio_file_idx").on(table.fileId),
+		uniqueIndex("section_audio_position_idx").on(
+			table.bookSectionId,
+			table.position
+		),
+		check("section_audio_id_length", sql`length(${table.id}) = 24`)
 	]
 )

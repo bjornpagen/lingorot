@@ -12,6 +12,7 @@ export type TranslationOptions = {
 }
 
 export async function getFormattedTranslation(bookId: string) {
+	console.log("\nFetching formatted translation for book ID:", bookId)
 	const result = await db
 		.select({
 			title: schema.book.title,
@@ -44,6 +45,7 @@ export async function translateGutenbergBook(
 	targetLanguage: LanguageCode,
 	cefrLevel: CEFRLevel
 ) {
+	console.log("\nLooking up book in database...")
 	const book = await db
 		.select({
 			id: schema.book.id
@@ -55,14 +57,26 @@ export async function translateGutenbergBook(
 	if (!book) {
 		throw new Error("Book not found - run test-gutenberg.ts first")
 	}
+	console.log("Found book with ID:", book.id)
 
+	console.log("\nFetching all book sections...")
 	const sections = await db
 		.select()
 		.from(schema.bookSection)
 		.where(eq(schema.bookSection.bookId, book.id))
 		.orderBy(schema.bookSection.position)
 
-	for (const section of sections) {
+	console.log(`Found ${sections.length} sections to process`)
+
+	for (const [index, section] of sections.entries()) {
+		console.log(
+			`\nProcessing section ${index + 1}/${sections.length}: "${section.name}"`
+		)
+		console.log(
+			`Content preview: ${section.content.slice(0, 150).replace(/\s+/g, " ")}...`
+		)
+
+		console.log("Checking for existing translation...")
 		const existingTranslation = await db
 			.select()
 			.from(schema.bookSectionTranslation)
@@ -76,9 +90,11 @@ export async function translateGutenbergBook(
 			.then((results) => results[0])
 
 		if (existingTranslation) {
+			console.log("✓ Translation already exists, skipping...")
 			continue
 		}
 
+		console.log("No existing translation found, generating new translation...")
 		const translatedContent = await transcribeText(
 			section.content,
 			targetLanguage,
@@ -89,13 +105,21 @@ export async function translateGutenbergBook(
 			throw new Error(`Failed to translate section ${section.name}`)
 		}
 
+		console.log(
+			"Translation preview:",
+			`${translatedContent.slice(0, 150).replace(/\s+/g, " ")}...`
+		)
+
+		console.log("Saving translation to database...")
 		await db.insert(schema.bookSectionTranslation).values({
 			sectionId: section.id,
 			languageId: targetLanguage,
 			content: translatedContent,
 			cefrLevel
 		})
+		console.log("✓ Translation saved successfully")
 	}
 
+	console.log("\n✓ All sections processed successfully")
 	return book.id
 }

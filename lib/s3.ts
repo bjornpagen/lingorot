@@ -9,6 +9,9 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { createId } from "@paralleldrive/cuid2"
 import { sectionFrame, file as fileTable } from "@/db/schema"
 import type { db as DbClient } from "@/db"
+import { createWriteStream } from "node:fs"
+import { pipeline } from "node:stream/promises"
+import type { Readable } from "node:stream"
 
 if (
 	!process.env.AWS_REGION ||
@@ -122,4 +125,19 @@ export async function uploadFileToS3AndSave(
 	})
 
 	return fileId
+}
+
+export async function downloadFromS3(key: string, localPath: string) {
+	const command = new GetObjectCommand({
+		Bucket: process.env.AWS_S3_BUCKET_NAME,
+		Key: key
+	})
+
+	const response = await s3Client.send(command)
+	if (!response.Body) {
+		throw new Error(`No body in response for key ${key}`)
+	}
+
+	const writeStream = createWriteStream(localPath)
+	await pipeline(response.Body as Readable, writeStream)
 }

@@ -16,6 +16,7 @@ async function dropTables() {
 		schema.challenge,
 		schema.video,
 		schema.sectionFrame,
+		schema.sectionAudio,
 		schema.file,
 		schema.bookSectionTranslation,
 		schema.bookSection,

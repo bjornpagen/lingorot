@@ -2,14 +2,10 @@ import "dotenv/config"
 import { faker } from "@faker-js/faker"
 import { db } from "@/db"
 import * as schema from "@/db/schema"
-import { getTableName, sql } from "drizzle-orm"
 
 type InsertChallenge = typeof schema.challenge.$inferInsert
-type InsertVideoPlaybackEvent = typeof schema.videoPlaybackEvent.$inferInsert
 
 const BATCH_SIZE = 5000
-const MUX_ASSET_ID = "tPD9AjM4IRFFfqMEzPAiyen3CZHZb4nJ9sGo3Q6vtPw"
-const MUX_PLAYBACK_ID = "a27R02EwLL1C600q6fAU3cLidz02HW4SuIbiZPPwU56g7w"
 
 function chunkify<T>(array: T[]): T[][] {
 	const chunks: T[][] = []
@@ -30,12 +26,6 @@ async function seed() {
 	await db.delete(schema.userLanguageLevel)
 	await db.delete(schema.userInterest)
 	await db.delete(schema.challenge)
-	await db.delete(schema.video)
-	await db.delete(schema.sectionFrame)
-	await db.delete(schema.bookSectionTranslation)
-	await db.delete(schema.bookSection)
-	await db.delete(schema.book)
-	await db.delete(schema.file)
 	await db.delete(schema.subInterest)
 	await db.delete(schema.interest)
 	await db.delete(schema.verification)
@@ -43,6 +33,7 @@ async function seed() {
 	await db.delete(schema.account)
 	await db.delete(schema.user)
 	await db.delete(schema.language)
+
 	const languagesData = [
 		{ code: "en" as const, name: "English", emoji: "🇬🇧" },
 		{ code: "es" as const, name: "Spanish", emoji: "🇪🇸" },
@@ -51,53 +42,13 @@ async function seed() {
 		{ code: "zh" as const, name: "Chinese", emoji: "🇨🇳" },
 		{ code: "ru" as const, name: "Russian", emoji: "🇷🇺" }
 	]
+
 	const languageResults = await db
 		.insert(schema.language)
 		.values(languagesData)
 		.returning({ code: schema.language.code })
 
 	const languageCodes = languageResults.map((l) => l.code)
-
-	// Add book and book section creation before video creation
-	const booksData = languageCodes.map((languageId) => ({
-		gutenbergId: faker.number.int({ min: 1, max: 100000 }),
-		title: faker.lorem.words(3),
-		author: faker.person.fullName(),
-		languageId
-	}))
-
-	const insertedBooks = await db
-		.insert(schema.book)
-		.values(booksData)
-		.returning({ id: schema.book.id })
-
-	const bookSectionsData = insertedBooks.flatMap((book) =>
-		Array.from({ length: 5 }, (_, i) => ({
-			bookId: book.id,
-			name: faker.lorem.words(2),
-			position: i,
-			content: faker.lorem.paragraphs(3)
-		}))
-	)
-
-	const insertedBookSections = await db
-		.insert(schema.bookSection)
-		.values(bookSectionsData)
-		.returning({ id: schema.bookSection.id })
-
-	// Add after book sections creation
-	const bookSectionTranslationsData = insertedBookSections.flatMap((section) =>
-		languageCodes.flatMap((languageId) => ({
-			sectionId: section.id,
-			languageId,
-			content: faker.lorem.paragraphs(3),
-			cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues)
-		}))
-	)
-
-	await db
-		.insert(schema.bookSectionTranslation)
-		.values(bookSectionTranslationsData)
 
 	const interestsData = [
 		{
@@ -435,52 +386,6 @@ async function seed() {
 	for (const chunk of chunkify(challengePeersRows)) {
 		await db.insert(schema.challengePeer).values(chunk)
 	}
-	const videoRows = insertedBookSections.flatMap((section) =>
-		languageCodes.flatMap((languageId) => ({
-			bookSectionId: section.id,
-			languageId,
-			cefrLevel: faker.helpers.arrayElement(schema.cefrLevel.enumValues),
-			muxTranscript: faker.helpers.maybe(() => faker.lorem.paragraph(), {
-				probability: 0.5
-			}),
-			muxAssetId: MUX_ASSET_ID,
-			muxPlaybackId: MUX_PLAYBACK_ID
-		}))
-	)
-
-	const insertedVideos = await db
-		.insert(schema.video)
-		.values(videoRows)
-		.returning({ id: schema.video.id })
-	const videoWordsRows = []
-	for (const video of insertedVideos) {
-		for (let i = 0; i < 5; i++) {
-			videoWordsRows.push({
-				videoId: video.id,
-				word: faker.word.noun(),
-				timeOffset: faker.number.int({ min: 0, max: 300 })
-			})
-		}
-	}
-	for (const chunk of chunkify(videoWordsRows)) {
-		await db.insert(schema.videoWord).values(chunk)
-	}
-	const chatMessagesRows = []
-	for (const video of insertedVideos) {
-		const selectedUserIds = faker.helpers.arrayElements(userIds, 5)
-		for (const userId of selectedUserIds) {
-			chatMessagesRows.push({
-				videoId: video.id,
-				userId,
-				role: faker.helpers.arrayElement(["user", "ai"]),
-				text: faker.lorem.paragraph(),
-				createdAt: faker.date.past()
-			})
-		}
-	}
-	for (const chunk of chunkify(chatMessagesRows)) {
-		await db.insert(schema.chatMessage).values(chunk)
-	}
 	const userLanguageLevelsRows = []
 	const seenCombinations = new Set<string>()
 
@@ -517,120 +422,6 @@ async function seed() {
 	for (const chunk of chunkify(userLanguageLevelsRows)) {
 		await db.insert(schema.userLanguageLevel).values(chunk)
 	}
-	const videoPlaybackEventRows = []
-
-	for (const video of insertedVideos) {
-		const selectedUserIds = faker.helpers.arrayElements(userIds, 3)
-		for (const userId of selectedUserIds) {
-			const sessionId = faker.string.alphanumeric(24)
-			const baseTime = faker.date.recent()
-
-			videoPlaybackEventRows.push({
-				sessionId,
-				videoId: video.id,
-				userId,
-				eventTime: baseTime,
-				viewerTime: baseTime,
-				eventType:
-					"viewinit" as (typeof schema.playbackEventType.enumValues)[number]
-			})
-
-			let currentPosition = 0
-			const eventCount = faker.number.int({ min: 5, max: 15 })
-
-			for (let i = 0; i < eventCount; i++) {
-				const timeIncrement = faker.number.int({ min: 1000, max: 5000 })
-				currentPosition += faker.number.int({ min: 1, max: 30 })
-				const currentTime = new Date(
-					baseTime.getTime() + timeIncrement * (i + 1)
-				)
-
-				const eventType = faker.helpers.arrayElement([
-					"statusChange",
-					"play",
-					"pause",
-					"timeUpdate",
-					"playbackRateChange",
-					"volumeChange",
-					"mutedChange"
-				] as const) as (typeof schema.playbackEventType.enumValues)[number]
-
-				const event: InsertVideoPlaybackEvent = {
-					sessionId,
-					videoId: video.id,
-					userId,
-					eventTime: currentTime,
-					viewerTime: currentTime,
-					eventType
-				}
-
-				switch (eventType) {
-					case "timeUpdate":
-						event.playbackPosition = currentPosition
-						event.bufferedPosition = currentPosition + 30
-						event.currentLiveTimestamp = Date.now()
-						event.currentOffsetFromLive = 0
-						break
-					case "statusChange":
-						event.status = faker.helpers.arrayElement([
-							"playing",
-							"paused",
-							"buffering"
-						])
-						event.oldStatus = faker.helpers.arrayElement([
-							"playing",
-							"paused",
-							"buffering"
-						])
-						break
-					case "playbackRateChange":
-						event.playbackRate = faker.helpers.arrayElement([
-							0.5, 1.0, 1.5, 2.0
-						])
-						event.oldPlaybackRate = faker.helpers.arrayElement([
-							0.5, 1.0, 1.5, 2.0
-						])
-						break
-					case "volumeChange":
-						event.volume = faker.number.float({
-							min: 0,
-							max: 1
-						})
-						event.oldVolume = faker.number.float({
-							min: 0,
-							max: 1
-						})
-						break
-					case "mutedChange":
-						event.muted = faker.datatype.boolean()
-						event.oldMuted = !event.muted
-						break
-				}
-
-				videoPlaybackEventRows.push(event)
-			}
-
-			videoPlaybackEventRows.push({
-				sessionId,
-				videoId: video.id,
-				userId,
-				eventTime: new Date(baseTime.getTime() + 300000),
-				viewerTime: new Date(baseTime.getTime() + 300000),
-				eventType:
-					"viewend" as (typeof schema.playbackEventType.enumValues)[number]
-			})
-		}
-	}
-
-	for (const chunk of chunkify(videoPlaybackEventRows)) {
-		await db.insert(schema.videoPlaybackEvent).values(chunk)
-	}
-
-	const table = getTableName(schema.videoPlaybackEvent)
-	const column = schema.videoPlaybackEvent.eventTime.name
-	await db.execute(
-		sql`SELECT create_hypertable(${table}, ${column}, create_default_indexes => true, if_not_exists => true, migrate_data => true)`
-	)
 
 	console.log("Seed completed!")
 }

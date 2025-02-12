@@ -41,10 +41,14 @@ type ReplicateRequest = {
 	input: FluxSchnellInput
 }
 
-async function createPrediction(prompt: string): Promise<string> {
+async function createPrediction(
+	prompt: string,
+	aspectRatio: FluxSchnellInput["aspect_ratio"]
+): Promise<string> {
 	const payload: ReplicateRequest = {
 		input: {
-			prompt
+			prompt,
+			aspect_ratio: aspectRatio
 		}
 	}
 
@@ -114,9 +118,10 @@ export type GeneratedImage = {
 export async function generateImage(
 	prompt: string,
 	sectionId: string,
-	position: number
+	position: number,
+	aspectRatio: FluxSchnellInput["aspect_ratio"] = "9:16"
 ): Promise<GeneratedImage> {
-	const predictionId = await createPrediction(prompt)
+	const predictionId = await createPrediction(prompt, aspectRatio)
 	const outputs = await getPredictionResult(predictionId)
 
 	const urlSchema = z.string().url()

@@ -1,6 +1,8 @@
 //import "server-only"
 import { createCompletion } from "@/lib/ai/common"
-import type * as schema from "@/db/schema"
+import * as schema from "@/db/schema"
+import { db } from "@/db"
+import { eq } from "drizzle-orm"
 type CEFRLevel = (typeof schema.cefrLevel.enumValues)[number]
 
 interface CEFRDetail {
@@ -113,19 +115,19 @@ function formatCEFRGuidelines(guidelines: string[]): string {
 /**
  * Builds the system prompt for the AI model based on language level.
  *
- * @param targetLanguage - The target language for transcription.
+ * @param targetLanguageName - The target language for transcription (e.g. "English")
  * @param cefrLevel - The CEFR level for language complexity.
  * @returns A formatted system prompt string.
  */
 export function buildLanguageTranscriptionPrompt(
-	targetLanguage: string,
+	targetLanguageName: string,
 	cefrLevel: CEFRLevel
 ): string {
 	const levelInfo = cefrDetails[cefrLevel]
 
-	return `You are a transcriber who converts text into clear, modern ${targetLanguage} while:
+	return `You are a transcriber who converts text into clear, modern ${targetLanguageName} while:
 - Maintaining all key details and nuances from the original text
-- Using natural, contemporary ${targetLanguage} phrasing
+- Using natural, contemporary ${targetLanguageName} phrasing
 - Following vocabulary and grammar structures appropriate for ${cefrLevel} level (${levelInfo.name}):
 ${formatCEFRFeatures(levelInfo.features)}
 
@@ -138,6 +140,8 @@ Format your response using a single pair of XML tags:
 <transcription>Your transcription</transcription>`
 }
 
+type LanguageCode = (typeof schema.languageCode.enumValues)[number]
+
 /**
  * Generates a transcription using the OpenAI API based on the provided text and language parameters.
  *
@@ -148,11 +152,21 @@ Format your response using a single pair of XML tags:
  */
 export async function transcribeText(
 	text: string,
-	targetLanguage: string,
+	targetLanguageCode: LanguageCode,
 	cefrLevel: CEFRLevel
 ): Promise<string | null> {
+	const targetLanguageName = await db
+		.select({ name: schema.language.name })
+		.from(schema.language)
+		.where(eq(schema.language.code, targetLanguageCode))
+		.limit(1)
+		.then((results) => results[0].name)
+	if (!targetLanguageName) {
+		return null
+	}
+
 	const systemPrompt = buildLanguageTranscriptionPrompt(
-		targetLanguage,
+		targetLanguageName,
 		cefrLevel
 	)
 	const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim())

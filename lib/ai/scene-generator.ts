@@ -21,44 +21,58 @@ const SceneResponseSchema = z.object({
 	description: z.string()
 })
 
-const systemPrompt = `You are a visual description expert who creates vivid, cinematic scene descriptions in a realistic art style. Your descriptions will be used to generate photorealistic imagery.
+const systemPrompt = `You are a visual description expert who creates vivid, cinematic scene descriptions. Here are examples of excellent character-focused descriptions:
 
-For each sentence, create a highly detailed scene description that includes:
+EXAMPLE 1:
+Text: "Sarah walked into her sun-filled kitchen and began preparing breakfast."
+Description: "A modern kitchen awash in morning sunlight. Sarah, a woman in her early 30s with shoulder-length brown hair and a cream sweater, moves purposefully at the marble countertop. Sunbeams stream through large windows, illuminating her gentle expression and the steam from a copper coffee maker. The scene, captured at eye level, frames her among white cabinets and stainless appliances, with a bowl of bright citrus fruits adding warmth to the composition."
 
-REQUIRED ELEMENTS:
-1. Physical Setting
-   - Photorealistic details about the environment and location
-   - Precise architectural features, natural elements, or room details
-   - Natural lighting conditions and time of day
+EXAMPLE 2:
+Text: "Professor Chen wrote the equation on the whiteboard while students took notes."
+Description: "A bright university classroom viewed from the back corner. Professor Chen, distinguished in his 50s wearing a navy blazer and wire-rimmed glasses, writes on the whiteboard with confident gestures. Natural light from tall windows catches his salt-and-pepper hair and the chalk dust in the air. Rows of students sit at modern desks in the foreground, their faces illuminated by both laptops and afternoon sun, creating a focused academic atmosphere."
 
-2. Visual Atmosphere
-   - Natural color palette and realistic tones
-   - True-to-life weather and environmental conditions
-   - Realistic lighting, shadows, and reflections
-   - Tangible textures and material properties
+For each scene, include these essential elements:
 
-3. Key Subjects
-   - Lifelike characters with natural proportions and expressions
-   - Realistic objects with proper scale and detail
-   - Natural spatial relationships and perspective
+CHARACTERS (Primary Focus):
+- Detailed physical appearance (age, build, clothing, distinctive features)
+- Facial expressions and emotional state
+- Body language and positioning
+- Actions and movements
 
-4. Camera Perspective
-   - Cinematic camera angles (eye-level, bird's eye, etc.)
-   - Professional shot composition (wide establishing shot, medium shot, etc.)
-   - Natural depth of field and focus
+SETTING:
+- Precise environmental details
+- Architecture and spatial layout
+- Natural or artificial lighting (emphasize bright, clear lighting)
+- Time of day and weather conditions
 
-RULES:
-- Maintain strict photorealism in all descriptions
-- Focus ONLY on visual elements that could exist in reality
-- Be extremely specific about physical details
-- Keep lighting and atmosphere naturalistic
-- Avoid fantastical or stylized elements
-- Produce your entire description as a single paragraph with no additional line breaks
+ATMOSPHERE:
+- Color palette and tones
+- Textures and materials
+- Lighting quality (warm/cool, direct/diffuse)
+- Depth and perspective
 
-Format your response as a JSON object:
-{
-  "description": "Your detailed visual description here"
-}`
+COMPOSITION:
+- Camera angle and distance
+- Focus points and depth of field
+- Frame composition and subject placement
+
+Remember:
+- Prioritize character descriptions when people are present
+- Maintain bright, clear lighting unless story demands otherwise
+- Stay strictly photorealistic
+- Connect every detail to the narrative context
+- Write as one detailed paragraph`
+
+const SectionSummarySchema = z.object({
+	summary: z.string()
+})
+
+const sectionSummarySystemPrompt = `You are an expert narrative summarizer. Create a concise but detailed summary that captures:
+- Main plot points and events
+- Key character descriptions and dynamics
+- Important setting and atmosphere details
+- Overall tone and mood of the section
+Keep the summary focused and vivid, highlighting elements that would be visually significant.`
 
 export function extractSentenceData(content: string): SentenceData[] {
 	const regex = /[^.!?]+[.!?]+/g
@@ -80,14 +94,23 @@ export async function generateSceneDescription(
 		`${sentenceData.text.slice(0, 100)}...`
 	)
 
-	const prompt = `CONTEXT:
-${sectionContext}
+	const summary = await getSectionSummary(sectionContext)
+	const localContext = getLocalParagraphContext(
+		sectionContext,
+		sentenceData.text
+	)
+
+	const contextPrompt = `SECTION SUMMARY:
+${summary}
+
+SURROUNDING CONTEXT:
+${localContext}
 
 SENTENCE TO VISUALIZE:
 ${sentenceData.text}
 
 TASK:
-Generate a single, highly detailed scene description for this specific sentence that could be used to create a visual image. Consider the broader context but focus on this particular moment in the narrative.
+Generate a single, highly detailed scene description for this specific sentence that is deeply connected to the narrative. Reflect the story's tone and details naturally and provide explicit visual cues derived directly from the text. Ensure the scene is well lit and avoids overly dark imagery unless explicitly required by the context.
 
 Remember to include all required elements:
 1. Physical Setting
@@ -101,24 +124,55 @@ Ensure your response is a single paragraph.`
 		model: DEFAULT_TRANSLATION_MODEL,
 		messages: [
 			{ role: "system", content: systemPrompt },
-			{ role: "user", content: prompt }
+			{ role: "user", content: contextPrompt }
 		],
 		response_format: zodResponseFormat(SceneResponseSchema, "scene"),
 		temperature: 0
 	})
 
-	console.log(
-		"Received completion response:",
-		completion.choices[0].message.parsed
-	)
-
-	const description = completion.choices[0].message.parsed?.description ?? ""
-
+	const description = completion.choices[0].message.content ?? ""
 	return {
 		text: sentenceData.text,
 		description,
 		displayPercentage: sentenceData.displayPercentage
 	}
+}
+
+async function getSectionSummary(sectionText: string): Promise<string> {
+	const completion = await openai.beta.chat.completions.parse({
+		model: DEFAULT_TRANSLATION_MODEL,
+		messages: [
+			{ role: "system", content: sectionSummarySystemPrompt },
+			{ role: "user", content: sectionText }
+		],
+		response_format: zodResponseFormat(SectionSummarySchema, "summary"),
+		temperature: 0.7
+	})
+
+	return completion.choices[0].message.content ?? ""
+}
+
+function getLocalParagraphContext(
+	sectionText: string,
+	sentence: string
+): string {
+	const paragraphs = sectionText
+		.split(/\n\s*\n/)
+		.map((p) => p.trim())
+		.filter(Boolean)
+
+	const sentenceIndex = paragraphs.findIndex((p) => p.includes(sentence))
+	if (sentenceIndex === -1) {
+		return sentence
+	}
+
+	const relevantParagraphs = [
+		sentenceIndex > 0 ? paragraphs[sentenceIndex - 1] : null,
+		paragraphs[sentenceIndex],
+		sentenceIndex < paragraphs.length - 1 ? paragraphs[sentenceIndex + 1] : null
+	].filter((p): p is string => p !== null)
+
+	return relevantParagraphs.join("\n\n")
 }
 
 export async function generateSceneDescriptions(

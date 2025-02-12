@@ -3,6 +3,7 @@ import { db } from "@/db"
 import * as schema from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { generateSectionAudio } from "@/lib/ai/audio-generator"
+import { getPresignedUrl } from "@/lib/s3"
 
 const GUTENBERG_ID = 84 // Frankenstein
 const LANGUAGE_CODE = "es" as const
@@ -13,7 +14,9 @@ async function testAudioGeneration() {
 
 	try {
 		const book = await db
-			.select()
+			.select({
+				id: schema.book.id
+			})
 			.from(schema.book)
 			.where(eq(schema.book.gutenbergId, GUTENBERG_ID))
 			.then((results) => results[0])
@@ -23,7 +26,10 @@ async function testAudioGeneration() {
 		}
 
 		const section = await db
-			.select()
+			.select({
+				id: schema.bookSection.id,
+				name: schema.bookSection.name
+			})
 			.from(schema.bookSection)
 			.where(eq(schema.bookSection.bookId, book.id))
 			.then((results) => results[0])
@@ -39,18 +45,22 @@ async function testAudioGeneration() {
 			.select({
 				id: schema.sectionAudio.id,
 				fileId: schema.sectionAudio.fileId,
-				durationMs: schema.sectionAudio.durationMs
+				durationMs: schema.sectionAudio.durationMs,
+				position: schema.sectionAudio.position
 			})
 			.from(schema.sectionAudio)
 			.where(eq(schema.sectionAudio.bookSectionId, section.id))
-			.orderBy(schema.sectionAudio.createdAt)
+			.orderBy(schema.sectionAudio.position)
 
 		console.log(`\nGenerated ${audioEntries.length} audio entries:`)
 		for (const entry of audioEntries) {
+			const signedUrl = await getPresignedUrl(entry.fileId)
 			console.log(
 				`Audio ${entry.id}`,
 				`\n  ID: ${entry.id}`,
-				`\n  Duration: ${(entry.durationMs / 1000).toFixed(1)}s`
+				`\n  Position: ${entry.position}`,
+				`\n  Duration: ${(entry.durationMs / 1000).toFixed(1)}s`,
+				`\n  URL: ${signedUrl}`
 			)
 		}
 	} catch (error) {
