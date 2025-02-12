@@ -797,3 +797,24 @@ export const sectionFrame = createTable(
 		)
 	]
 )
+
+export const sectionAudio = createTable(
+	"section_audio",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		bookSectionId: char("book_section_id", { length: 24 })
+			.notNull()
+			.references(() => bookSection.id),
+		fileId: char("file_id", { length: 24 })
+			.notNull()
+			.references(() => file.id),
+		durationMs: integer("duration_ms").notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		index("section_audio_section_idx").on(table.bookSectionId),
+		index("section_audio_file_idx").on(table.fileId)
+	]
+)

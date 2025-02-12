@@ -107,3 +107,19 @@ export async function uploadFrameToS3AndSave(
 		return fileId
 	})
 }
+
+export async function uploadFileToS3AndSave(
+	db: typeof DbClient,
+	file: File
+): Promise<string> {
+	const fileId = await uploadToS3(file)
+
+	await db.insert(fileTable).values({
+		id: fileId,
+		name: file.name,
+		size: file.size,
+		type: file.type
+	})
+
+	return fileId
+}
