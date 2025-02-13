@@ -864,3 +864,150 @@ export const sectionAudio = createTable(
 		check("section_audio_id_length", sql`length(${table.id}) = 24`)
 	]
 )
+
+export const gutenbergBook = createTable(
+	"gutenberg_book",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		gutenbergId: integer("gutenberg_id").notNull(),
+		title: text("title").notNull(),
+		language: text("language").notNull(),
+		summary: text("summary").notNull(),
+		downloadCount: integer("download_count").notNull(),
+		publisher: text("publisher").notNull(),
+		publicationPlace: text("publication_place").notNull(),
+		publishedAt: timestamp("published_at", { mode: "date" }).notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [
+		uniqueIndex("gutenberg_book_gutenberg_id_idx").on(table.gutenbergId),
+		check("gutenberg_book_id_length", sql`length(${table.id}) = 24`)
+	]
+)
+
+export const gutenbergPerson = createTable(
+	"gutenberg_person",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		name: text("name").notNull(),
+		details: text("details"),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [
+		uniqueIndex("gutenberg_person_name_idx").on(table.name),
+		check("gutenberg_person_id_length", sql`length(${table.id}) = 24`)
+	]
+)
+
+export const gutenbergFormat = createTable(
+	"gutenberg_format",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		bookId: char("book_id", { length: 24 })
+			.notNull()
+			.references(() => gutenbergBook.id),
+		formatType: text("format_type").notNull(),
+		url: text("url").notNull(),
+		description: text("description"),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [
+		uniqueIndex("gutenberg_format_book_url_idx").on(table.bookId, table.url),
+		check("gutenberg_format_id_length", sql`length(${table.id}) = 24`)
+	]
+)
+
+export const gutenbergSubject = createTable(
+	"gutenberg_subject",
+	{
+		id: char("id", { length: 24 }).primaryKey().notNull().$default(createId),
+		name: text("name").notNull(),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [
+		uniqueIndex("gutenberg_subject_name_idx").on(table.name),
+		check("gutenberg_subject_id_length", sql`length(${table.id}) = 24`)
+	]
+)
+
+export const gutenbergBookSubject = createTable(
+	"gutenberg_book_subject",
+	{
+		bookId: char("book_id", { length: 24 })
+			.notNull()
+			.references(() => gutenbergBook.id),
+		subjectId: char("subject_id", { length: 24 })
+			.notNull()
+			.references(() => gutenbergSubject.id),
+		createdAt: timestamp("created_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(table) => [
+		uniqueIndex("gutenberg_book_subject_idx").on(table.bookId, table.subjectId)
+	]
+)
+
+export const gutenbergFormatRelations = relations(
+	gutenbergFormat,
+	({ one }) => ({
+		book: one(gutenbergBook, {
+			fields: [gutenbergFormat.bookId],
+			references: [gutenbergBook.id]
+		})
+	})
+)
+
+export const gutenbergRelations = relations(gutenbergBook, ({ many }) => ({
+	formats: many(gutenbergFormat),
+	bookSubjects: many(gutenbergBookSubject)
+}))
+
+export const gutenbergSubjectRelations = relations(
+	gutenbergSubject,
+	({ many }) => ({
+		bookSubjects: many(gutenbergBookSubject)
+	})
+)
+
+export const gutenbergBookSubjectRelations = relations(
+	gutenbergBookSubject,
+	({ one }) => ({
+		book: one(gutenbergBook, {
+			fields: [gutenbergBookSubject.bookId],
+			references: [gutenbergBook.id]
+		}),
+		subject: one(gutenbergSubject, {
+			fields: [gutenbergBookSubject.subjectId],
+			references: [gutenbergSubject.id]
+		})
+	})
+)

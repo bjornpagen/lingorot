@@ -27,7 +27,12 @@ async function dropTables() {
 		schema.session,
 		schema.account,
 		schema.user,
-		schema.language
+		schema.language,
+		schema.gutenbergBookSubject,
+		schema.gutenbergFormat,
+		schema.gutenbergPerson,
+		schema.gutenbergSubject,
+		schema.gutenbergBook
 	]
 
 	for (const table of tables) {
