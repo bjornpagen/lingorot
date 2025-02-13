@@ -473,6 +473,7 @@ export const video = createTable(
 			.notNull()
 			.references(() => language.code),
 		cefrLevel: cefrLevel("cefr_level").notNull(),
+		fileId: char("file_id", { length: 24 }).references(() => file.id),
 		muxAssetId: text("mux_asset_id"),
 		muxPlaybackId: text("mux_playback_id"),
 		muxTranscript: text("mux_transcript"),
@@ -503,6 +504,10 @@ export const videoRelations = relations(video, ({ one }) => ({
 	language: one(language, {
 		fields: [video.languageId],
 		references: [language.code]
+	}),
+	file: one(file, {
+		fields: [video.fileId],
+		references: [file.id]
 	})
 }))
 

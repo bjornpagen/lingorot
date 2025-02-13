@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session"
 import { getPaginatedVideos } from "@/functions/videoPreloader"
 import PageSpinner from "@/components/PageSpinner"
 import { Redirect } from "@/components/Redirect"
+import type * as schema from "@/db/schema"
 
 async function VideoFeedData() {
 	const session = await getSession()
@@ -16,12 +17,16 @@ async function VideoFeedData() {
 	const initialVideos = await getPaginatedVideos(
 		1,
 		5,
-		session.user.currentLanguageId
+		session.user
+			.currentLanguageId as (typeof schema.languageCode.enumValues)[number]
 	)
 	return (
 		<VideoFeed
 			videos={initialVideos}
-			languageId={session.user.currentLanguageId}
+			languageId={
+				session.user
+					.currentLanguageId as (typeof schema.languageCode.enumValues)[number]
+			}
 		/>
 	)
 }

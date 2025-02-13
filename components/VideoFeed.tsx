@@ -12,6 +12,8 @@ import {
 } from "@/functions/videoPreloader"
 import type { ViewToken } from "react-native"
 import { useVideoEventLogger } from "@/hooks/useVideoEventLogger"
+import type * as schema from "@/db/schema"
+
 const { width, height } = Dimensions.get("window")
 const TAB_BAR_HEIGHT = 70
 const screenHeight = height - TAB_BAR_HEIGHT
@@ -28,7 +30,6 @@ const VideoCardBase = ({
 }: VideoCardProps) => {
 	const player = useVideoPlayer(url, (player) => {
 		player.loop = true
-		player.muted = true
 	})
 	React.useEffect(() => {
 		if (player) {
@@ -65,7 +66,7 @@ const VideoCard = React.memo(VideoCardBase)
 
 interface VideoFeedProps {
 	videos: PaginatedVideo[]
-	languageId: string
+	languageId: (typeof schema.languageCode.enumValues)[number]
 }
 
 export default function VideoFeed({
@@ -160,8 +161,8 @@ export default function VideoFeed({
 						/>
 						<View style={styles.titleContainer}>
 							<View style={styles.contentBubble}>
-								<Text style={styles.title}>{item.title}</Text>
-								<Text style={styles.description}>{item.description}</Text>
+								<Text style={styles.title}>Title</Text>
+								<Text style={styles.description}>Description</Text>
 							</View>
 						</View>
 					</View>
@@ -202,7 +203,7 @@ export default function VideoFeed({
 				<ChatModal
 					visible={isChatVisible}
 					onClose={() => setIsChatVisible(false)}
-					videoTitle={videos[currentVideoIndex]?.title}
+					videoTitle={"Title"}
 				/>
 			</View>
 		</React.Fragment>

@@ -41,7 +41,7 @@ const s3Client = new S3Client({
  */
 export async function uploadToS3(
 	file: File,
-	maxSizeInBytes: number = 5 * 1024 * 1024
+	maxSizeInBytes: number = 500 * 1024 * 1024
 ): Promise<string> {
 	if (maxSizeInBytes > 0 && file.size > maxSizeInBytes) {
 		throw new Error(`File size exceeds limit of ${maxSizeInBytes} bytes`)

@@ -3,10 +3,16 @@ import * as schema from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { exec } from "node:child_process"
 import { promisify } from "node:util"
-import { writeFile, unlink, access, mkdir } from "node:fs/promises"
+import { writeFile, unlink, access, mkdir, readFile } from "node:fs/promises"
 import * as path from "node:path"
 import * as os from "node:os"
-import { downloadFromS3 } from "@/lib/s3"
+import pLimit from "p-limit"
+import {
+	downloadFromS3,
+	uploadFileToS3AndSave,
+	getPresignedUrl
+} from "@/lib/s3"
+import { createMuxAsset } from "@/lib/mux"
 
 const execPromise = promisify(exec)
 const TEMP_DIR = os.tmpdir()
@@ -210,33 +216,29 @@ async function stitchVideoTimeline(
 	)
 
 	try {
-		const segmentListLines: string[] = []
-		let previousBoundary = 0
-
-		for (let idx = 0; idx < timeline.length; idx++) {
-			console.log(`🎞️  Processing frame ${idx + 1}/${timeline.length}`)
-			const currentBoundary = timeline[idx].boundaryMs
-			const durationSec = (currentBoundary - previousBoundary) / 1000
-			previousBoundary = currentBoundary
-
-			const framePath = getFramePath(timeline[idx].frameFileId)
+		const limit = pLimit(os.cpus().length)
+		const tasks = timeline.map((entry, idx) => {
+			const startBoundary = idx === 0 ? 0 : timeline[idx - 1].boundaryMs
+			const durationSec = (entry.boundaryMs - startBoundary) / 1000
+			const framePath = getFramePath(entry.frameFileId)
 			const segmentPath = path.join(
 				TEMP_DIR,
 				`segment_${Date.now()}_${idx}.mp4`
 			)
 			segmentPaths.push(segmentPath)
-
-			const cmd = `ffmpeg -y -loop 1 -i ${framePath} -t ${durationSec} -vf "format=yuv420p" -c:v libx264 ${segmentPath}`
-			await execPromise(cmd)
-			segmentListLines.push(`file '${segmentPath}'`)
-		}
-
+			return limit(async () => {
+				console.log(`🎞️  Processing frame ${idx + 1}/${timeline.length}`)
+				await execPromise(
+					`ffmpeg -y -loop 1 -i ${framePath} -t ${durationSec} -vf "format=yuv420p" -c:v libx264 ${segmentPath}`
+				)
+				return `file '${segmentPath}'`
+			})
+		})
+		const segmentListLines = await Promise.all(tasks)
 		await writeFile(segmentListPath, segmentListLines.join("\n"))
-
 		console.log("🎬 Combining video segments with audio...")
 		const concatCmd = `ffmpeg -y -f concat -safe 0 -i ${segmentListPath} -i ${audioPath} -c:v libx264 -c:a aac -strict experimental ${finalVideoPath}`
 		await execPromise(concatCmd)
-
 		return finalVideoPath
 	} finally {
 		await Promise.allSettled([
@@ -284,8 +286,32 @@ export async function generateVideo(
 	console.log("✅ Video assembly complete")
 
 	await unlink(finalAudioPath).catch(() => {})
-	console.log(
-		`\n🎉 Final video generated at: ${finalVideoPath}\n   Language: ${languageId}\n   CEFR Level: ${cefrLevel}`
+
+	console.log("📤 Uploading video to S3...")
+	const videoFile = new File(
+		[await readFile(finalVideoPath)],
+		`video-${Date.now()}.mp4`,
+		{ type: "video/mp4" }
 	)
-	return finalVideoPath
+	const fileId = await uploadFileToS3AndSave(db, videoFile)
+
+	await unlink(finalVideoPath).catch(() => {})
+
+	console.log("🎥 Creating Mux asset...")
+	const presignedUrl = await getPresignedUrl(fileId)
+	const { assetId, playbackId } = await createMuxAsset(presignedUrl, languageId)
+
+	await db.insert(schema.video).values({
+		bookSectionId,
+		languageId,
+		cefrLevel,
+		fileId,
+		muxAssetId: assetId,
+		muxPlaybackId: playbackId
+	})
+
+	console.log(
+		`\n🎉 Final video processed\n   Language: ${languageId}\n   CEFR Level: ${cefrLevel}\n   Mux Playback ID: ${playbackId}`
+	)
+	return fileId
 }
