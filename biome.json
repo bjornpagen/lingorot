@@ -50,6 +50,10 @@
 				"useTemplate": {
 					"level": "error",
 					"fix": "safe"
+				},
+				"noUselessElse": {
+					"level": "error",
+					"fix": "safe"
 				}
 			},
 			"a11y": {
