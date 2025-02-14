@@ -14,6 +14,16 @@ import { db } from "@/db/index"
 const GUTENBERG_XML_URL =
 	"https://www.gutenberg.org/cache/epub/feeds/pgmarc.xml.gz"
 
+const BATCH_SIZE = 5000
+
+function chunkify<T>(array: T[]): T[][] {
+	const chunks: T[][] = []
+	for (let i = 0; i < array.length; i += BATCH_SIZE) {
+		chunks.push(array.slice(i, i + BATCH_SIZE))
+	}
+	return chunks
+}
+
 type Record = {
 	controlfield?:
 		| Array<{ tag: string; value: string }>
@@ -120,21 +130,38 @@ async function processBook(record: Record, syncStartTime: Date) {
 			.join("\n\n")
 	} else if (summaryFields.length) {
 		summary = getRequiredSubfield(summaryFields[0], "a")
-	} else {
-		throw new Error("Missing summary field: 520")
+	}
+	if (!summary) {
+		console.log(`Skipping book ${id}: No summary available`)
+		return
 	}
 	let pubField = findDatafield(record, "264")[0]
 	if (!pubField) {
 		pubField = findDatafield(record, "260")[0]
 		if (!pubField) {
-			throw new Error("Missing publication field: 264 or 260")
+			console.log(`Skipping book ${id}: No publication field available`)
+			return
 		}
 	}
 	const { place, publisher, date } = parsePublicationDetails(pubField)
+	if (!place || !publisher || !date) {
+		console.log(`Skipping book ${id}: Missing publication details`)
+		return
+	}
+	const title = getRequiredSubfield(titleField, "a")
+	if (!title) {
+		console.log(`Skipping book ${id}: No title available`)
+		return
+	}
+	const language = getRequiredSubfield(langField, "a")
+	if (!language) {
+		console.log(`Skipping book ${id}: No language available`)
+		return
+	}
 	const bookData = {
 		gutenbergId: id,
-		title: getRequiredSubfield(titleField, "a"),
-		language: getRequiredSubfield(langField, "a"),
+		title,
+		language,
 		summary,
 		downloadCount: downloads,
 		publicationPlace: place,
@@ -182,10 +209,12 @@ export async function importGutenbergXML(xmlContent: string): Promise<void> {
 		? parsed.collection.record
 		: [parsed.collection.record]
 	console.log(`Found ${records.length} records to process`)
-	for (const [index, record] of records.entries()) {
-		console.log(`Processing record ${index + 1}/${records.length}`)
-		await processBook(record, syncStartTime)
+
+	for (const chunk of chunkify(records)) {
+		console.log(`Processing chunk of ${chunk.length} records...`)
+		await Promise.all(chunk.map((record) => processBook(record, syncStartTime)))
 	}
+
 	console.log("Cleaning up old records...")
 	await db
 		.delete(gutenbergBookSubject)
