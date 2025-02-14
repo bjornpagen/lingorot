@@ -77,14 +77,6 @@ function findSubfield(datafield: DataField, code: string): string | undefined {
 	return fields.code === code ? fields.value : undefined
 }
 
-function getRequiredField(record: Record, tag: string): DataField {
-	const field = findDatafield(record, tag)[0]
-	if (!field) {
-		throw new Error(`Missing required field: ${tag}`)
-	}
-	return field
-}
-
 function getRequiredSubfield(field: DataField, code: string): string {
 	const value = findSubfield(field, code)
 	if (value === undefined || value === null) {
