@@ -12,7 +12,8 @@ import {
 	check,
 	primaryKey,
 	date,
-	uniqueIndex
+	uniqueIndex,
+	vector
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { relations } from "drizzle-orm"
@@ -877,6 +878,7 @@ export const gutenbergBook = createTable(
 		publisher: text("publisher").notNull(),
 		publicationPlace: text("publication_place").notNull(),
 		publishedAt: timestamp("published_at", { mode: "date" }).notNull(),
+		embedding: vector("embedding", { dimensions: 1536 }),
 		createdAt: timestamp("created_at", { mode: "date" })
 			.notNull()
 			.$defaultFn(() => new Date()),
@@ -887,7 +889,11 @@ export const gutenbergBook = createTable(
 	},
 	(table) => [
 		uniqueIndex("gutenberg_book_gutenberg_id_idx").on(table.gutenbergId),
-		check("gutenberg_book_id_length", sql`length(${table.id}) = 24`)
+		check("gutenberg_book_id_length", sql`length(${table.id}) = 24`),
+		index("gutenberg_book_embedding_idx").using(
+			"hnsw",
+			table.embedding.op("vector_cosine_ops")
+		)
 	]
 )
 
