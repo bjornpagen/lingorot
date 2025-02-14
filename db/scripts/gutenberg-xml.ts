@@ -297,11 +297,12 @@ async function processFormats(
 	const formatFields = findDatafield(record, "856")
 	console.log(`Found ${formatFields.length} format fields`)
 	for (const formatField of formatFields) {
-		const url = findSubfield(formatField, "a")
-		if (!url) {
+		const urlValue = findSubfield(formatField, "a")
+		if (!urlValue) {
 			console.log("Skipping format: No URL found")
 			continue
 		}
+		const url = String(urlValue)
 		const extMatch = url.match(/\.(\w+)(?:\?|$)/)
 		const formatType = extMatch ? extMatch[1] : "ebook"
 		console.log("Processing format:", {
