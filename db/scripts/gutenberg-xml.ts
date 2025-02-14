@@ -111,17 +111,29 @@ function parsePublicationDetails(field: DataField): {
 async function processBook(record: Record, syncStartTime: Date) {
 	const gutenbergId = getControlField(record, "001")
 	if (!gutenbergId) {
-		throw new Error("Missing Gutenberg ID")
+		console.log("Skipping book: Missing Gutenberg ID")
+		return
 	}
 	const id = Number.parseInt(gutenbergId, 10)
 	if (Number.isNaN(id)) {
-		throw new Error(`Invalid Gutenberg ID: ${gutenbergId}`)
+		console.log(`Skipping book: Invalid Gutenberg ID: ${gutenbergId}`)
+		return
 	}
 	const downloads = record.download_count
 		? Number.parseInt(record.download_count, 10)
 		: 0
-	const titleField = getRequiredField(record, "245")
-	const langField = getRequiredField(record, "041")
+	const titleFields = findDatafield(record, "245")
+	if (!titleFields.length) {
+		console.log(`Skipping book ${id}: No title available`)
+		return
+	}
+	const titleField = titleFields[0]
+	const langFields = findDatafield(record, "041")
+	if (!langFields.length) {
+		console.log(`Skipping book ${id}: No language available`)
+		return
+	}
+	const langField = langFields[0]
 	let summary = ""
 	const summaryFields = findDatafield(record, "520")
 	if (Array.isArray(summaryFields) && summaryFields.length) {
