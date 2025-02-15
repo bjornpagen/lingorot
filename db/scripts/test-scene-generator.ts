@@ -28,11 +28,18 @@ async function testSceneGenerator() {
 			.select()
 			.from(schema.bookSection)
 			.where(eq(schema.bookSection.bookId, book.id))
+			.orderBy(schema.bookSection.position)
+			.limit(1)
 			.then((results) => results[0])
 
 		if (!section) {
 			throw new Error("No sections found for book")
 		}
+
+		console.log("\nDeleting existing frames for section:", section.name)
+		await db
+			.delete(schema.sectionFrame)
+			.where(eq(schema.sectionFrame.bookSectionId, section.id))
 
 		console.log("\nGenerating scene descriptions for section:", section.name)
 		const scenes = await generateSceneDescriptions(section.content)
