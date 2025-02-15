@@ -1,5 +1,3 @@
-import { z } from "zod"
-import { zodResponseFormat } from "openai/helpers/zod"
 import { uploadFrameToS3AndSave } from "@/lib/s3"
 import { db } from "@/db"
 import { generateImage, type GeneratedImage } from "@/lib/replicate"
@@ -15,10 +13,6 @@ type SceneDescription = {
 	description: string
 	displayPercentage: number
 }
-
-const SceneResponseSchema = z.object({
-	description: z.string()
-})
 
 const systemPrompt = `You are a visual description expert who creates vivid, cinematic scene descriptions. Here are examples of excellent character-focused descriptions:
 
@@ -61,10 +55,6 @@ Remember:
 - Stay strictly photorealistic
 - Connect every detail to the narrative context
 - Write as one detailed paragraph`
-
-const SectionSummarySchema = z.object({
-	summary: z.string()
-})
 
 const sectionSummarySystemPrompt = `You are an expert narrative summarizer. Create a concise but detailed summary that captures:
 - Main plot points and events
@@ -119,13 +109,12 @@ Remember to include all required elements:
 
 Ensure your response is a single paragraph.`
 
-	const completion = await openai.beta.chat.completions.parse({
-		model: "gpt-4o",
+	const completion = await openai.chat.completions.create({
+		model: "gpt-4",
 		messages: [
 			{ role: "system", content: systemPrompt },
 			{ role: "user", content: contextPrompt }
 		],
-		response_format: zodResponseFormat(SceneResponseSchema, "scene"),
 		temperature: 0
 	})
 
@@ -138,13 +127,12 @@ Ensure your response is a single paragraph.`
 }
 
 async function getSectionSummary(sectionText: string): Promise<string> {
-	const completion = await openai.beta.chat.completions.parse({
-		model: "gpt-4o",
+	const completion = await openai.chat.completions.create({
+		model: "gpt-4",
 		messages: [
 			{ role: "system", content: sectionSummarySystemPrompt },
 			{ role: "user", content: sectionText }
 		],
-		response_format: zodResponseFormat(SectionSummarySchema, "summary"),
 		temperature: 0.7
 	})
 
