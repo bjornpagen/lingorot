@@ -1,6 +1,4 @@
 "use client"
-
-import { useState } from "react"
 import {
 	Modal,
 	View,
@@ -12,6 +10,8 @@ import {
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import React from "react"
+import { bookChat } from "@/lib/ai/chat"
+import type * as schema from "@/db/schema"
 
 interface Message {
 	id: string
@@ -23,30 +23,61 @@ interface ChatModalProps {
 	visible: boolean
 	onClose: () => void
 	videoTitle: string
+	bookId: string
+	sectionId: string
+	languageId: (typeof schema.languageCode.enumValues)[number]
 }
 
-export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
-	const [message, setMessage] = useState("")
-	const [messages, setMessages] = useState<Message[]>([
-		{
-			id: "1",
-			text: `Hi friend! 👋 What did you learn from "${videoTitle}"? Let's practice together!`,
-			isUser: false
-		}
-	])
+export function ChatModal({
+	visible,
+	onClose,
+	videoTitle,
+	bookId,
+	sectionId,
+	languageId
+}: ChatModalProps) {
+	const [message, setMessage] = React.useState("")
+	const [messages, setMessages] = React.useState<Message[]>([])
+	const [isLoading, setIsLoading] = React.useState(false)
 
 	React.useEffect(() => {
-		setMessages([
-			{
-				id: "1",
-				text: `Hi friend! 👋 What did you learn from "${videoTitle}"? Let's practice together!`,
-				isUser: false
+		const initializeChat = async () => {
+			setIsLoading(true)
+			try {
+				const greeting = await bookChat({
+					message:
+						"Please introduce yourself and ask me if I have any questions about the text.",
+					bookId,
+					sectionId,
+					languageId
+				})
+				setMessages([
+					{
+						id: "1",
+						text: greeting,
+						isUser: false
+					}
+				])
+			} catch (err) {
+				setMessages([
+					{
+						id: "1",
+						text: "Hi! 👋 Let's practice together!",
+						isUser: false
+					}
+				])
+			} finally {
+				setIsLoading(false)
 			}
-		])
-	}, [videoTitle])
+		}
+
+		if (visible) {
+			initializeChat()
+		}
+	}, [visible, bookId, sectionId, languageId])
 
 	const handleSend = async () => {
-		if (!message.trim()) {
+		if (!message.trim() || isLoading) {
 			return
 		}
 
@@ -58,15 +89,32 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 
 		setMessages((prev) => [...prev, userMessage])
 		setMessage("")
+		setIsLoading(true)
 
-		setTimeout(() => {
+		try {
+			const aiResponse = await bookChat({
+				message,
+				bookId,
+				sectionId,
+				languageId
+			})
+
 			const aiMessage: Message = {
 				id: (Date.now() + 1).toString(),
-				text: "That's interesting! Can you tell me more about what you learned from the video?",
+				text: aiResponse,
 				isUser: false
 			}
 			setMessages((prev) => [...prev, aiMessage])
-		}, 1000)
+		} catch {
+			const errorMessage: Message = {
+				id: (Date.now() + 1).toString(),
+				text: "Sorry, I couldn't process your message. Please try again.",
+				isUser: false
+			}
+			setMessages((prev) => [...prev, errorMessage])
+		} finally {
+			setIsLoading(false)
+		}
 	}
 
 	return (
@@ -97,6 +145,11 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 								<Text style={styles.messageText}>{msg.text}</Text>
 							</View>
 						))}
+						{isLoading && (
+							<View style={[styles.messageBubble, styles.aiMessage]}>
+								<Text style={styles.messageText}>Thinking...</Text>
+							</View>
+						)}
 					</ScrollView>
 
 					<KeyboardAvoidingView
@@ -111,8 +164,16 @@ export function ChatModal({ visible, onClose, videoTitle }: ChatModalProps) {
 							onSubmitEditing={handleSend}
 							returnKeyType="send"
 							blurOnSubmit={false}
+							editable={!isLoading}
 						/>
-						<TouchableOpacity onPress={handleSend} style={styles.sendButton}>
+						<TouchableOpacity
+							onPress={handleSend}
+							style={[
+								styles.sendButton,
+								isLoading && styles.sendButtonDisabled
+							]}
+							disabled={isLoading}
+						>
 							<Ionicons name="send" size={24} color="white" />
 						</TouchableOpacity>
 					</KeyboardAvoidingView>
@@ -206,5 +267,8 @@ const styles = {
 		backgroundColor: "#FF6B6B",
 		justifyContent: "center",
 		alignItems: "center"
+	},
+	sendButtonDisabled: {
+		opacity: 0.5
 	}
 } as const

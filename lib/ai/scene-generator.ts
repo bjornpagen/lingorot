@@ -1,6 +1,5 @@
 import { z } from "zod"
 import { zodResponseFormat } from "openai/helpers/zod"
-import { DEFAULT_TRANSLATION_MODEL } from "@/lib/ai/common"
 import { uploadFrameToS3AndSave } from "@/lib/s3"
 import { db } from "@/db"
 import { generateImage, type GeneratedImage } from "@/lib/replicate"
@@ -121,7 +120,7 @@ Remember to include all required elements:
 Ensure your response is a single paragraph.`
 
 	const completion = await openai.beta.chat.completions.parse({
-		model: DEFAULT_TRANSLATION_MODEL,
+		model: "gpt-4o",
 		messages: [
 			{ role: "system", content: systemPrompt },
 			{ role: "user", content: contextPrompt }
@@ -140,7 +139,7 @@ Ensure your response is a single paragraph.`
 
 async function getSectionSummary(sectionText: string): Promise<string> {
 	const completion = await openai.beta.chat.completions.parse({
-		model: DEFAULT_TRANSLATION_MODEL,
+		model: "gpt-4o",
 		messages: [
 			{ role: "system", content: sectionSummarySystemPrompt },
 			{ role: "user", content: sectionText }

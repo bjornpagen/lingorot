@@ -18,9 +18,22 @@ const { width, height } = Dimensions.get("window")
 const TAB_BAR_HEIGHT = 70
 const screenHeight = height - TAB_BAR_HEIGHT
 
-type VideoCardProps = PaginatedVideo & { isActive: boolean }
+type VideoCardProps = PaginatedVideo & {
+	isActive: boolean
+	bookId: string
+	bookSectionId: string
+	languageId: (typeof schema.languageCode.enumValues)[number]
+}
 
-const VideoCardBase = ({ url, thumbnail, id, isActive }: VideoCardProps) => {
+const VideoCardBase = ({
+	url,
+	thumbnail,
+	id,
+	isActive,
+	bookId,
+	bookSectionId,
+	languageId
+}: VideoCardProps) => {
 	const title = "Frankenstein"
 	const description = "Capitulo 1: El nacimiento de Frankenstein"
 
@@ -200,6 +213,9 @@ export default function VideoFeed({
 					visible={isChatVisible}
 					onClose={() => setIsChatVisible(false)}
 					videoTitle={"Title"}
+					bookId={videos[currentVideoIndex]?.bookId}
+					sectionId={videos[currentVideoIndex]?.bookSectionId}
+					languageId={languageId}
 				/>
 			</View>
 		</React.Fragment>

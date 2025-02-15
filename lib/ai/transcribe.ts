@@ -11,7 +11,7 @@ interface CEFRDetail {
 	guidelines: string[]
 }
 
-const cefrDetails: Record<CEFRLevel, CEFRDetail> = {
+export const cefrDetails: Record<CEFRLevel, CEFRDetail> = {
 	A1: {
 		name: "Breakthrough or Beginner",
 		features: [
@@ -104,11 +104,11 @@ const cefrDetails: Record<CEFRLevel, CEFRDetail> = {
 	}
 }
 
-function formatCEFRFeatures(features: string[]): string {
+export function formatCEFRFeatures(features: string[]): string {
 	return features.map((feature) => `    - ${feature}`).join("\n")
 }
 
-function formatCEFRGuidelines(guidelines: string[]): string {
+export function formatCEFRGuidelines(guidelines: string[]): string {
 	return guidelines.map((guideline) => `- ${guideline}`).join("\n")
 }
 
