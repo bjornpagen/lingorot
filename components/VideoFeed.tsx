@@ -20,14 +20,10 @@ const screenHeight = height - TAB_BAR_HEIGHT
 
 type VideoCardProps = PaginatedVideo & { isActive: boolean }
 
-const VideoCardBase = ({
-	title,
-	description,
-	url,
-	thumbnail,
-	id,
-	isActive
-}: VideoCardProps) => {
+const VideoCardBase = ({ url, thumbnail, id, isActive }: VideoCardProps) => {
+	const title = "Frankenstein"
+	const description = "Capitulo 1: El nacimiento de Frankenstein"
+
 	const player = useVideoPlayer(url, (player) => {
 		player.loop = true
 	})

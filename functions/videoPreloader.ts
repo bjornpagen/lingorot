@@ -30,6 +30,7 @@ export async function getPaginatedVideos(
 			playbackId: schema.video.muxPlaybackId,
 			transcript: schema.video.muxTranscript,
 			bookSectionId: schema.video.bookSectionId,
+			languageId: schema.video.languageId,
 			cefrLevel: schema.video.cefrLevel
 		})
 		.from(schema.video)
@@ -40,7 +41,7 @@ export async function getPaginatedVideos(
 
 	return videos.map((video) => ({
 		...video,
-		url: `https://stream.mux.com/${video.playbackId}.m3u8`,
+		url: `https://stream.mux.com/${video.playbackId}.m3u8?default_subtitles_lang=${languageId}`,
 		thumbnail: `https://image.mux.com/${video.playbackId}/animated.webp`
 	}))
 }
