@@ -165,6 +165,9 @@ export function ChatModal({
 							returnKeyType="send"
 							blurOnSubmit={false}
 							editable={!isLoading}
+							autoCorrect={false}
+							autoCapitalize="none"
+							spellCheck={false}
 						/>
 						<TouchableOpacity
 							onPress={handleSend}
